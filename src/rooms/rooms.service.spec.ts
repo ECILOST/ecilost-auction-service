@@ -1,9 +1,10 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { RoomsService } from './rooms.service.js';
+import { AuctionableKindDto } from './dto/schedule-room.dto.js';
 
 const item = '11111111-1111-4111-8111-111111111111';
-const valid = { maximumCapacity: 30, startsAt: '2030-01-01T10:00:00.000Z', rounds: [{ entries: [{ kind: 'ITEM' as const, catalogId: item }] }] };
+const valid = { maximumCapacity: 30, startsAt: '2030-01-01T10:00:00.000Z', rounds: [{ entries: [{ kind: AuctionableKindDto.ITEM, catalogId: item }] }] };
 const catalog = { reserve: vi.fn().mockResolvedValue(true) };
 
 describe('RoomsService', () => {
@@ -84,5 +85,15 @@ describe('RoomsService', () => {
     const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
     await expect(service.admitParticipant('room', 'student')).resolves.toEqual({ participant, alreadyAdmitted: true });
     expect(tx.roomParticipant.create).not.toHaveBeenCalled();
+  });
+  it('activa solo las salas SCHEDULED cuya hora de inicio ya llego', async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 2 });
+    const service = new RoomsService({ room: { updateMany } } as never, catalog as never);
+    const now = new Date('2030-01-01T10:00:00.000Z');
+    await expect(service.activateDueRooms(now)).resolves.toEqual({ count: 2 });
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { status: 'SCHEDULED', startsAt: { lte: now } },
+      data: { status: 'ACTIVE' },
+    });
   });
 });

@@ -86,4 +86,12 @@ export class RoomsService {
       return { participant, alreadyAdmitted: false };
     });
   }
+
+  /** Cambia una sala a ACTIVE una sola vez cuando llega su hora de inicio. */
+  async activateDueRooms(now = new Date()) {
+    return this.prisma.room.updateMany({
+      where: { status: RoomStatus.SCHEDULED, startsAt: { lte: now } },
+      data: { status: RoomStatus.ACTIVE },
+    });
+  }
 }
