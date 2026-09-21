@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuctionConfig, validateEnv } from './config/auction.config.js';
+import { validateEnv } from './config/auction.config.js';
+import { AuctionConfigModule } from './config/auction-config.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
 import { JwtAuthGuard } from './common/jwt-auth.guard.js';
@@ -8,7 +9,7 @@ import { RolesGuard } from './common/roles.guard.js';
 
 @Global()
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }), PrismaModule, RoomsModule],
-  providers: [AuctionConfig, JwtAuthGuard, RolesGuard],
+  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }), AuctionConfigModule, PrismaModule, RoomsModule],
+  providers: [JwtAuthGuard, RolesGuard],
 })
 export class AppModule {}

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: ecilost-auction-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: auction
+      POSTGRES_PASSWORD: auction
+      POSTGRES_DB: ecilost_auction
+    ports:
+      - '5436:5432'
+    volumes:
+      - ecilost-auction-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U auction -d ecilost_auction']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ecilost-auction-pgdata:
