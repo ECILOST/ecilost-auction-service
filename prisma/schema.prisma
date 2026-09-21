@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+  moduleFormat = "esm"
+  runtime = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoomStatus {
+  SCHEDULED
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
+enum AuctionableKind {
+  ITEM
+  LOT
+}
+
+model Room {
+  id String @id
+  status RoomStatus @default(SCHEDULED)
+  maximumCapacity Int
+  startsAt DateTime
+  scheduledBy String
+  createdAt DateTime @default(now())
+  rounds Round[]
+  @@index([status, startsAt])
+  @@map("rooms")
+}
+
+model Round {
+  id String @id
+  roomId String
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  position Int
+  entries RoundEntry[]
+  @@unique([roomId, position])
+  @@map("rounds")
+}
+
+model RoundEntry {
+  id String @id
+  roundId String
+  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  kind AuctionableKind
+  catalogId String
+  // La base arbitra solicitudes concurrentes: una referencia solo aparece en una sala
+  // no finalizada. Al cerrar/cancelar la sala, la futura HU libera esta reserva.
+  @@unique([kind, catalogId])
+  @@index([roundId])
+  @@map("round_entries")
+}
