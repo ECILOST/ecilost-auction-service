@@ -52,9 +52,29 @@ describe('RoomsService', () => {
     expect(tx.room.updateMany).not.toHaveBeenCalled();
     expect(tx.roomParticipant.create).not.toHaveBeenCalled();
   });
+  it('permite reconectar a un participante cuando la sala ya inicio', async () => {
+    const participant = { id: 'participant', roomId: 'room', userId: 'student' };
+    const tx = {
+      room: { findUnique: vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', maximumCapacity: 2, admittedCount: 2 }), updateMany: vi.fn() },
+      roomParticipant: { findUnique: vi.fn().mockResolvedValue(participant), create: vi.fn() },
+    };
+    const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
+    await expect(service.admitParticipant('room', 'student')).resolves.toEqual({ participant, alreadyAdmitted: true });
+    expect(tx.room.updateMany).not.toHaveBeenCalled();
+    expect(tx.roomParticipant.create).not.toHaveBeenCalled();
+  });
+  it('rechaza a un estudiante nuevo cuando la sala ya inicio', async () => {
+    const tx = {
+      room: { findUnique: vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', maximumCapacity: 2, admittedCount: 1 }), updateMany: vi.fn() },
+      roomParticipant: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn() },
+    };
+    const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
+    await expect(service.admitParticipant('room', 'student')).rejects.toThrow('Sala cerrada.');
+    expect(tx.room.updateMany).not.toHaveBeenCalled();
+  });
   it.each([
     ['sala llena', { id: 'room', status: 'SCHEDULED', maximumCapacity: 1, admittedCount: 1 }, ConflictException],
-    ['sala no programada', { id: 'room', status: 'ACTIVE', maximumCapacity: 2, admittedCount: 0 }, ConflictException],
+    ['sala cancelada', { id: 'room', status: 'CANCELLED', maximumCapacity: 2, admittedCount: 0 }, ConflictException],
     ['sala inexistente', null, NotFoundException],
   ])('rechaza %s', async (_scenario, room, exception) => {
     const tx = { room: { findUnique: vi.fn().mockResolvedValue(room), updateMany: vi.fn() }, roomParticipant: { findUnique: vi.fn(), create: vi.fn() } };

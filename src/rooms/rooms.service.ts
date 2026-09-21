@@ -59,12 +59,16 @@ export class RoomsService {
         select: { id: true, status: true, maximumCapacity: true, admittedCount: true },
       });
       if (!room) throw new NotFoundException('La sala no existe.');
-      if (room.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no admite nuevos participantes.');
 
       const alreadyAdmitted = await tx.roomParticipant.findUnique({
         where: { roomId_userId: { roomId, userId } },
       });
-      if (alreadyAdmitted) return { participant: alreadyAdmitted, alreadyAdmitted: true };
+      if (alreadyAdmitted && (room.status === RoomStatus.SCHEDULED || room.status === RoomStatus.ACTIVE)) {
+        return { participant: alreadyAdmitted, alreadyAdmitted: true };
+      }
+
+      if (room.status === RoomStatus.ACTIVE) throw new ConflictException('Sala cerrada.');
+      if (room.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no esta disponible.');
 
       if (room.admittedCount >= room.maximumCapacity) throw new ConflictException('Sala completa.');
       const consumed = await tx.room.updateMany({
