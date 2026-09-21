@@ -47,48 +47,65 @@ export class RoomsService {
     }
   }
 
-  /**
-   * La comparacion y el incremento ocurren en la misma transaccion. El filtro por el
-   * contador leido convierte la actualizacion en optimista: frente a solicitudes
-   * simultaneas, solo una puede consumir el siguiente cupo.
-   */
+  /** La base de datos arbitra el aforo con una comparacion entre ambas columnas. */
   async admitParticipant(roomId: string, userId: string) {
-    return this.prisma.$transaction(async (tx) => {
-      const room = await tx.room.findUnique({
-        where: { id: roomId },
-        select: { id: true, status: true, maximumCapacity: true, admittedCount: true },
-      });
-      if (!room) throw new NotFoundException('La sala no existe.');
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const room = await tx.room.findUnique({
+          where: { id: roomId },
+          select: { id: true, status: true, maximumCapacity: true, admittedCount: true },
+        });
+        if (!room) throw new NotFoundException('La sala no existe.');
 
-      const alreadyAdmitted = await tx.roomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId } },
-      });
-      if (alreadyAdmitted && (room.status === RoomStatus.SCHEDULED || room.status === RoomStatus.ACTIVE)) {
-        return { participant: alreadyAdmitted, alreadyAdmitted: true };
-      }
-
-      if (room.status === RoomStatus.ACTIVE) throw new ConflictException('Sala cerrada.');
-      if (room.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no esta disponible.');
-
-      if (room.admittedCount >= room.maximumCapacity) throw new ConflictException('Sala completa.');
-      const consumed = await tx.room.updateMany({
-        where: { id: roomId, status: RoomStatus.SCHEDULED, admittedCount: room.admittedCount },
-        data: { admittedCount: { increment: 1 } },
-      });
-      if (consumed.count !== 1) {
-        // Otra solicitud pudo haber admitido a este mismo usuario mientras esta esperaba.
-        const admittedConcurrently = await tx.roomParticipant.findUnique({
+        const alreadyAdmitted = await tx.roomParticipant.findUnique({
           where: { roomId_userId: { roomId, userId } },
         });
-        if (admittedConcurrently) return { participant: admittedConcurrently, alreadyAdmitted: true };
-        throw new ConflictException('Sala completa.');
-      }
+        if (alreadyAdmitted && (room.status === RoomStatus.SCHEDULED || room.status === RoomStatus.ACTIVE)) {
+          return { participant: alreadyAdmitted, alreadyAdmitted: true };
+        }
 
-      const participant = await tx.roomParticipant.create({
-        data: { id: randomUUID(), roomId, userId },
+        if (room.status === RoomStatus.ACTIVE) throw new ConflictException('Sala cerrada.');
+        if (room.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no esta disponible.');
+
+        if (room.admittedCount >= room.maximumCapacity) throw new ConflictException('Sala completa.');
+        const consumed = await tx.$executeRaw`
+          UPDATE "rooms"
+          SET "admittedCount" = "admittedCount" + 1
+          WHERE "id" = ${roomId}
+            AND "status" = CAST(${RoomStatus.SCHEDULED} AS "RoomStatus")
+            AND "admittedCount" < "maximumCapacity"
+        `;
+        if (consumed !== 1) {
+          // Otra solicitud pudo haber admitido a este mismo usuario mientras esta esperaba.
+          const admittedConcurrently = await tx.roomParticipant.findUnique({
+            where: { roomId_userId: { roomId, userId } },
+          });
+          if (admittedConcurrently) return { participant: admittedConcurrently, alreadyAdmitted: true };
+          const currentRoom = await tx.room.findUnique({
+            where: { id: roomId },
+            select: { status: true, maximumCapacity: true, admittedCount: true },
+          });
+          if (!currentRoom) throw new NotFoundException('La sala no existe.');
+          if (currentRoom.status === RoomStatus.ACTIVE) throw new ConflictException('Sala cerrada.');
+          if (currentRoom.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no esta disponible.');
+          if (currentRoom.admittedCount >= currentRoom.maximumCapacity) throw new ConflictException('Sala completa.');
+          throw new ConflictException('No fue posible reservar un cupo. Intenta de nuevo.');
+        }
+
+        const participant = await tx.roomParticipant.create({
+          data: { id: randomUUID(), roomId, userId },
+        });
+        return { participant, alreadyAdmitted: false };
       });
-      return { participant, alreadyAdmitted: false };
-    });
+    } catch (error) {
+      // Una segunda solicitud simultanea del mismo estudiante revierte su incremento
+      // por la restriccion unica; luego se responde como reconexion idempotente.
+      if ((error as { code?: string }).code === 'P2002') {
+        const participant = await this.prisma.roomParticipant.findUnique({ where: { roomId_userId: { roomId, userId } } });
+        if (participant) return { participant, alreadyAdmitted: true };
+      }
+      throw error;
+    }
   }
 
   /** Cambia una sala a ACTIVE una sola vez cuando llega su hora de inicio. */

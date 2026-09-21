@@ -33,13 +33,13 @@ describe('RoomsService', () => {
     const tx = {
       room: {
         findUnique: vi.fn().mockResolvedValue({ id: 'room', status: 'SCHEDULED', maximumCapacity: 2, admittedCount: 0 }),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      $executeRaw: vi.fn().mockResolvedValue(1),
       roomParticipant: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue(participant) },
     };
     const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
     await expect(service.admitParticipant('room', 'student')).resolves.toEqual({ participant, alreadyAdmitted: false });
-    expect(tx.room.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { admittedCount: { increment: 1 } } }));
+    expect(tx.$executeRaw).toHaveBeenCalledOnce();
   });
   it('no consume otro cupo cuando el estudiante ya esta admitido', async () => {
     const participant = { id: 'participant', roomId: 'room', userId: 'student' };
@@ -84,9 +84,11 @@ describe('RoomsService', () => {
   it('rechaza cuando otra solicitud consume el cupo antes de la actualizacion', async () => {
     const tx = {
       room: {
-        findUnique: vi.fn().mockResolvedValue({ id: 'room', status: 'SCHEDULED', maximumCapacity: 1, admittedCount: 0 }),
-        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findUnique: vi.fn()
+          .mockResolvedValueOnce({ id: 'room', status: 'SCHEDULED', maximumCapacity: 1, admittedCount: 0 })
+          .mockResolvedValueOnce({ status: 'SCHEDULED', maximumCapacity: 1, admittedCount: 1 }),
       },
+      $executeRaw: vi.fn().mockResolvedValue(0),
       roomParticipant: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn() },
     };
     const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
@@ -98,8 +100,8 @@ describe('RoomsService', () => {
     const tx = {
       room: {
         findUnique: vi.fn().mockResolvedValue({ id: 'room', status: 'SCHEDULED', maximumCapacity: 2, admittedCount: 0 }),
-        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
+      $executeRaw: vi.fn().mockResolvedValue(0),
       roomParticipant: { findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(participant), create: vi.fn() },
     };
     const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
