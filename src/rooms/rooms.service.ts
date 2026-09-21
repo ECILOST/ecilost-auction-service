@@ -2,11 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
 @Injectable()
 export class RoomsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly catalog: CatalogReservationClient) {}
 
   /**
    * Una sola escritura anidada persiste sala, rondas y reservas. La restriccion unica de
@@ -19,6 +20,9 @@ export class RoomsService {
       throw new BadRequestException('La sala debe tener rondas y cada ronda debe contener al menos un objeto o lote.');
     }
     const roomId = randomUUID();
+    const rounds = input.rounds.map((round, index) => ({ id: randomUUID(), position: index + 1, entries: round.entries }));
+    const reserved = await this.catalog.reserve(rounds.flatMap((round) => round.entries.map((entry) => ({ ...entry, roundId: round.id }))));
+    if (!reserved) throw new ConflictException('Uno o mas objetos o lotes ya no estan disponibles.');
     try {
       return await this.prisma.room.create({
         data: {
@@ -27,8 +31,8 @@ export class RoomsService {
           startsAt: new Date(input.startsAt),
           scheduledBy,
           rounds: {
-            create: input.rounds.map((round, index) => ({
-              id: randomUUID(), position: index + 1,
+            create: rounds.map((round) => ({
+              id: round.id, position: round.position,
               entries: { create: round.entries.map((entry) => ({ id: randomUUID(), kind: entry.kind, catalogId: entry.catalogId })) },
             })),
           },
