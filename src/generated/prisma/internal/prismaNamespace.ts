@@ -398,6 +398,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Room: 'Room',
+  RoomParticipant: 'RoomParticipant',
   Round: 'Round',
   RoundEntry: 'RoundEntry'
 } as const
@@ -415,7 +416,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "room" | "round" | "roundEntry"
+    modelProps: "room" | "roomParticipant" | "round" | "roundEntry"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -490,6 +491,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.RoomCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.RoomCountAggregateOutputType> | number
+        }
+      }
+    }
+    RoomParticipant: {
+      payload: Prisma.$RoomParticipantPayload<ExtArgs>
+      fields: Prisma.RoomParticipantFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RoomParticipantFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RoomParticipantFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>
+        }
+        findFirst: {
+          args: Prisma.RoomParticipantFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RoomParticipantFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>
+        }
+        findMany: {
+          args: Prisma.RoomParticipantFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>[]
+        }
+        create: {
+          args: Prisma.RoomParticipantCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>
+        }
+        createMany: {
+          args: Prisma.RoomParticipantCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RoomParticipantCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>[]
+        }
+        delete: {
+          args: Prisma.RoomParticipantDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>
+        }
+        update: {
+          args: Prisma.RoomParticipantUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>
+        }
+        deleteMany: {
+          args: Prisma.RoomParticipantDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RoomParticipantUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RoomParticipantUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>[]
+        }
+        upsert: {
+          args: Prisma.RoomParticipantUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RoomParticipantPayload>
+        }
+        aggregate: {
+          args: Prisma.RoomParticipantAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRoomParticipant>
+        }
+        groupBy: {
+          args: Prisma.RoomParticipantGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RoomParticipantGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RoomParticipantCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RoomParticipantCountAggregateOutputType> | number
         }
       }
     }
@@ -684,12 +759,23 @@ export const RoomScalarFieldEnum = {
   id: 'id',
   status: 'status',
   maximumCapacity: 'maximumCapacity',
+  admittedCount: 'admittedCount',
   startsAt: 'startsAt',
   scheduledBy: 'scheduledBy',
   createdAt: 'createdAt'
 } as const
 
 export type RoomScalarFieldEnum = (typeof RoomScalarFieldEnum)[keyof typeof RoomScalarFieldEnum]
+
+
+export const RoomParticipantScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  userId: 'userId',
+  admittedAt: 'admittedAt'
+} as const
+
+export type RoomParticipantScalarFieldEnum = (typeof RoomParticipantScalarFieldEnum)[keyof typeof RoomParticipantScalarFieldEnum]
 
 
 export const RoundScalarFieldEnum = {
@@ -968,6 +1054,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   room?: Prisma.RoomOmit
+  roomParticipant?: Prisma.RoomParticipantOmit
   round?: Prisma.RoundOmit
   roundEntry?: Prisma.RoundEntryOmit
 }

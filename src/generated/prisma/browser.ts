@@ -23,6 +23,11 @@ export * from './enums.js';
  */
 export type Room = Prisma.RoomModel
 /**
+ * Model RoomParticipant
+ * 
+ */
+export type RoomParticipant = Prisma.RoomParticipantModel
+/**
  * Model Round
  * 
  */

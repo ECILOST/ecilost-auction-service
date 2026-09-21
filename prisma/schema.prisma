@@ -25,12 +25,27 @@ model Room {
   id String @id
   status RoomStatus @default(SCHEDULED)
   maximumCapacity Int
+  admittedCount Int @default(0)
   startsAt DateTime
   scheduledBy String
   createdAt DateTime @default(now())
   rounds Round[]
+  participants RoomParticipant[]
   @@index([status, startsAt])
   @@map("rooms")
+}
+
+model RoomParticipant {
+  id String @id
+  roomId String
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId String
+  admittedAt DateTime @default(now())
+
+  // La admision es idempotente: una reconexion no debe volver a consumir aforo.
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("room_participants")
 }
 
 model Round {

@@ -28,16 +28,19 @@ export type AggregateRoom = {
 
 export type RoomAvgAggregateOutputType = {
   maximumCapacity: number | null
+  admittedCount: number | null
 }
 
 export type RoomSumAggregateOutputType = {
   maximumCapacity: number | null
+  admittedCount: number | null
 }
 
 export type RoomMinAggregateOutputType = {
   id: string | null
   status: $Enums.RoomStatus | null
   maximumCapacity: number | null
+  admittedCount: number | null
   startsAt: Date | null
   scheduledBy: string | null
   createdAt: Date | null
@@ -47,6 +50,7 @@ export type RoomMaxAggregateOutputType = {
   id: string | null
   status: $Enums.RoomStatus | null
   maximumCapacity: number | null
+  admittedCount: number | null
   startsAt: Date | null
   scheduledBy: string | null
   createdAt: Date | null
@@ -56,6 +60,7 @@ export type RoomCountAggregateOutputType = {
   id: number
   status: number
   maximumCapacity: number
+  admittedCount: number
   startsAt: number
   scheduledBy: number
   createdAt: number
@@ -65,16 +70,19 @@ export type RoomCountAggregateOutputType = {
 
 export type RoomAvgAggregateInputType = {
   maximumCapacity?: true
+  admittedCount?: true
 }
 
 export type RoomSumAggregateInputType = {
   maximumCapacity?: true
+  admittedCount?: true
 }
 
 export type RoomMinAggregateInputType = {
   id?: true
   status?: true
   maximumCapacity?: true
+  admittedCount?: true
   startsAt?: true
   scheduledBy?: true
   createdAt?: true
@@ -84,6 +92,7 @@ export type RoomMaxAggregateInputType = {
   id?: true
   status?: true
   maximumCapacity?: true
+  admittedCount?: true
   startsAt?: true
   scheduledBy?: true
   createdAt?: true
@@ -93,6 +102,7 @@ export type RoomCountAggregateInputType = {
   id?: true
   status?: true
   maximumCapacity?: true
+  admittedCount?: true
   startsAt?: true
   scheduledBy?: true
   createdAt?: true
@@ -189,6 +199,7 @@ export type RoomGroupByOutputType = {
   id: string
   status: $Enums.RoomStatus
   maximumCapacity: number
+  admittedCount: number
   startsAt: Date
   scheduledBy: string
   createdAt: Date
@@ -221,20 +232,24 @@ export type RoomWhereInput = {
   id?: Prisma.StringFilter<"Room"> | string
   status?: Prisma.EnumRoomStatusFilter<"Room"> | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFilter<"Room"> | number
+  admittedCount?: Prisma.IntFilter<"Room"> | number
   startsAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   scheduledBy?: Prisma.StringFilter<"Room"> | string
   createdAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   rounds?: Prisma.RoundListRelationFilter
+  participants?: Prisma.RoomParticipantListRelationFilter
 }
 
 export type RoomOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   rounds?: Prisma.RoundOrderByRelationAggregateInput
+  participants?: Prisma.RoomParticipantOrderByRelationAggregateInput
 }
 
 export type RoomWhereUniqueInput = Prisma.AtLeast<{
@@ -244,16 +259,19 @@ export type RoomWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.RoomWhereInput | Prisma.RoomWhereInput[]
   status?: Prisma.EnumRoomStatusFilter<"Room"> | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFilter<"Room"> | number
+  admittedCount?: Prisma.IntFilter<"Room"> | number
   startsAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   scheduledBy?: Prisma.StringFilter<"Room"> | string
   createdAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   rounds?: Prisma.RoundListRelationFilter
+  participants?: Prisma.RoomParticipantListRelationFilter
 }, "id">
 
 export type RoomOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -271,6 +289,7 @@ export type RoomScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Room"> | string
   status?: Prisma.EnumRoomStatusWithAggregatesFilter<"Room"> | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntWithAggregatesFilter<"Room"> | number
+  admittedCount?: Prisma.IntWithAggregatesFilter<"Room"> | number
   startsAt?: Prisma.DateTimeWithAggregatesFilter<"Room"> | Date | string
   scheduledBy?: Prisma.StringWithAggregatesFilter<"Room"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Room"> | Date | string
@@ -280,46 +299,55 @@ export type RoomCreateInput = {
   id: string
   status?: $Enums.RoomStatus
   maximumCapacity: number
+  admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
   createdAt?: Date | string
   rounds?: Prisma.RoundCreateNestedManyWithoutRoomInput
+  participants?: Prisma.RoomParticipantCreateNestedManyWithoutRoomInput
 }
 
 export type RoomUncheckedCreateInput = {
   id: string
   status?: $Enums.RoomStatus
   maximumCapacity: number
+  admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
   createdAt?: Date | string
   rounds?: Prisma.RoundUncheckedCreateNestedManyWithoutRoomInput
+  participants?: Prisma.RoomParticipantUncheckedCreateNestedManyWithoutRoomInput
 }
 
 export type RoomUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rounds?: Prisma.RoundUpdateManyWithoutRoomNestedInput
+  participants?: Prisma.RoomParticipantUpdateManyWithoutRoomNestedInput
 }
 
 export type RoomUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rounds?: Prisma.RoundUncheckedUpdateManyWithoutRoomNestedInput
+  participants?: Prisma.RoomParticipantUncheckedUpdateManyWithoutRoomNestedInput
 }
 
 export type RoomCreateManyInput = {
   id: string
   status?: $Enums.RoomStatus
   maximumCapacity: number
+  admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
   createdAt?: Date | string
@@ -329,6 +357,7 @@ export type RoomUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -338,6 +367,7 @@ export type RoomUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -347,6 +377,7 @@ export type RoomCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -354,12 +385,14 @@ export type RoomCountOrderByAggregateInput = {
 
 export type RoomAvgOrderByAggregateInput = {
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
 }
 
 export type RoomMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -369,6 +402,7 @@ export type RoomMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   status?: Prisma.SortOrder
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -376,6 +410,7 @@ export type RoomMinOrderByAggregateInput = {
 
 export type RoomSumOrderByAggregateInput = {
   maximumCapacity?: Prisma.SortOrder
+  admittedCount?: Prisma.SortOrder
 }
 
 export type RoomScalarRelationFilter = {
@@ -403,6 +438,20 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type RoomCreateNestedOneWithoutParticipantsInput = {
+  create?: Prisma.XOR<Prisma.RoomCreateWithoutParticipantsInput, Prisma.RoomUncheckedCreateWithoutParticipantsInput>
+  connectOrCreate?: Prisma.RoomCreateOrConnectWithoutParticipantsInput
+  connect?: Prisma.RoomWhereUniqueInput
+}
+
+export type RoomUpdateOneRequiredWithoutParticipantsNestedInput = {
+  create?: Prisma.XOR<Prisma.RoomCreateWithoutParticipantsInput, Prisma.RoomUncheckedCreateWithoutParticipantsInput>
+  connectOrCreate?: Prisma.RoomCreateOrConnectWithoutParticipantsInput
+  upsert?: Prisma.RoomUpsertWithoutParticipantsInput
+  connect?: Prisma.RoomWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RoomUpdateToOneWithWhereWithoutParticipantsInput, Prisma.RoomUpdateWithoutParticipantsInput>, Prisma.RoomUncheckedUpdateWithoutParticipantsInput>
+}
+
 export type RoomCreateNestedOneWithoutRoundsInput = {
   create?: Prisma.XOR<Prisma.RoomCreateWithoutRoundsInput, Prisma.RoomUncheckedCreateWithoutRoundsInput>
   connectOrCreate?: Prisma.RoomCreateOrConnectWithoutRoundsInput
@@ -417,22 +466,86 @@ export type RoomUpdateOneRequiredWithoutRoundsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RoomUpdateToOneWithWhereWithoutRoundsInput, Prisma.RoomUpdateWithoutRoundsInput>, Prisma.RoomUncheckedUpdateWithoutRoundsInput>
 }
 
+export type RoomCreateWithoutParticipantsInput = {
+  id: string
+  status?: $Enums.RoomStatus
+  maximumCapacity: number
+  admittedCount?: number
+  startsAt: Date | string
+  scheduledBy: string
+  createdAt?: Date | string
+  rounds?: Prisma.RoundCreateNestedManyWithoutRoomInput
+}
+
+export type RoomUncheckedCreateWithoutParticipantsInput = {
+  id: string
+  status?: $Enums.RoomStatus
+  maximumCapacity: number
+  admittedCount?: number
+  startsAt: Date | string
+  scheduledBy: string
+  createdAt?: Date | string
+  rounds?: Prisma.RoundUncheckedCreateNestedManyWithoutRoomInput
+}
+
+export type RoomCreateOrConnectWithoutParticipantsInput = {
+  where: Prisma.RoomWhereUniqueInput
+  create: Prisma.XOR<Prisma.RoomCreateWithoutParticipantsInput, Prisma.RoomUncheckedCreateWithoutParticipantsInput>
+}
+
+export type RoomUpsertWithoutParticipantsInput = {
+  update: Prisma.XOR<Prisma.RoomUpdateWithoutParticipantsInput, Prisma.RoomUncheckedUpdateWithoutParticipantsInput>
+  create: Prisma.XOR<Prisma.RoomCreateWithoutParticipantsInput, Prisma.RoomUncheckedCreateWithoutParticipantsInput>
+  where?: Prisma.RoomWhereInput
+}
+
+export type RoomUpdateToOneWithWhereWithoutParticipantsInput = {
+  where?: Prisma.RoomWhereInput
+  data: Prisma.XOR<Prisma.RoomUpdateWithoutParticipantsInput, Prisma.RoomUncheckedUpdateWithoutParticipantsInput>
+}
+
+export type RoomUpdateWithoutParticipantsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  rounds?: Prisma.RoundUpdateManyWithoutRoomNestedInput
+}
+
+export type RoomUncheckedUpdateWithoutParticipantsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
+  maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  rounds?: Prisma.RoundUncheckedUpdateManyWithoutRoomNestedInput
+}
+
 export type RoomCreateWithoutRoundsInput = {
   id: string
   status?: $Enums.RoomStatus
   maximumCapacity: number
+  admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
   createdAt?: Date | string
+  participants?: Prisma.RoomParticipantCreateNestedManyWithoutRoomInput
 }
 
 export type RoomUncheckedCreateWithoutRoundsInput = {
   id: string
   status?: $Enums.RoomStatus
   maximumCapacity: number
+  admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
   createdAt?: Date | string
+  participants?: Prisma.RoomParticipantUncheckedCreateNestedManyWithoutRoomInput
 }
 
 export type RoomCreateOrConnectWithoutRoundsInput = {
@@ -455,18 +568,22 @@ export type RoomUpdateWithoutRoundsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  participants?: Prisma.RoomParticipantUpdateManyWithoutRoomNestedInput
 }
 
 export type RoomUncheckedUpdateWithoutRoundsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRoomStatusFieldUpdateOperationsInput | $Enums.RoomStatus
   maximumCapacity?: Prisma.IntFieldUpdateOperationsInput | number
+  admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  participants?: Prisma.RoomParticipantUncheckedUpdateManyWithoutRoomNestedInput
 }
 
 
@@ -476,10 +593,12 @@ export type RoomUncheckedUpdateWithoutRoundsInput = {
 
 export type RoomCountOutputType = {
   rounds: number
+  participants: number
 }
 
 export type RoomCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rounds?: boolean | RoomCountOutputTypeCountRoundsArgs
+  participants?: boolean | RoomCountOutputTypeCountParticipantsArgs
 }
 
 /**
@@ -499,15 +618,24 @@ export type RoomCountOutputTypeCountRoundsArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.RoundWhereInput
 }
 
+/**
+ * RoomCountOutputType without action
+ */
+export type RoomCountOutputTypeCountParticipantsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RoomParticipantWhereInput
+}
+
 
 export type RoomSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   status?: boolean
   maximumCapacity?: boolean
+  admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
   createdAt?: boolean
   rounds?: boolean | Prisma.Room$roundsArgs<ExtArgs>
+  participants?: boolean | Prisma.Room$participantsArgs<ExtArgs>
   _count?: boolean | Prisma.RoomCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["room"]>
 
@@ -515,6 +643,7 @@ export type RoomSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   status?: boolean
   maximumCapacity?: boolean
+  admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
   createdAt?: boolean
@@ -524,6 +653,7 @@ export type RoomSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   status?: boolean
   maximumCapacity?: boolean
+  admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
   createdAt?: boolean
@@ -533,14 +663,16 @@ export type RoomSelectScalar = {
   id?: boolean
   status?: boolean
   maximumCapacity?: boolean
+  admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
   createdAt?: boolean
 }
 
-export type RoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "maximumCapacity" | "startsAt" | "scheduledBy" | "createdAt", ExtArgs["result"]["room"]>
+export type RoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "maximumCapacity" | "admittedCount" | "startsAt" | "scheduledBy" | "createdAt", ExtArgs["result"]["room"]>
 export type RoomInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rounds?: boolean | Prisma.Room$roundsArgs<ExtArgs>
+  participants?: boolean | Prisma.Room$participantsArgs<ExtArgs>
   _count?: boolean | Prisma.RoomCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoomIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -550,11 +682,13 @@ export type $RoomPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Room"
   objects: {
     rounds: Prisma.$RoundPayload<ExtArgs>[]
+    participants: Prisma.$RoomParticipantPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     status: $Enums.RoomStatus
     maximumCapacity: number
+    admittedCount: number
     startsAt: Date
     scheduledBy: string
     createdAt: Date
@@ -953,6 +1087,7 @@ readonly fields: RoomFieldRefs;
 export interface Prisma__RoomClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   rounds<T extends Prisma.Room$roundsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Room$roundsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoundPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  participants<T extends Prisma.Room$participantsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Room$participantsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoomParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -985,6 +1120,7 @@ export interface RoomFieldRefs {
   readonly id: Prisma.FieldRef<"Room", 'String'>
   readonly status: Prisma.FieldRef<"Room", 'RoomStatus'>
   readonly maximumCapacity: Prisma.FieldRef<"Room", 'Int'>
+  readonly admittedCount: Prisma.FieldRef<"Room", 'Int'>
   readonly startsAt: Prisma.FieldRef<"Room", 'DateTime'>
   readonly scheduledBy: Prisma.FieldRef<"Room", 'String'>
   readonly createdAt: Prisma.FieldRef<"Room", 'DateTime'>
@@ -1402,6 +1538,30 @@ export type Room$roundsArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.RoundScalarFieldEnum | Prisma.RoundScalarFieldEnum[]
+}
+
+/**
+ * Room.participants
+ */
+export type Room$participantsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RoomParticipant
+   */
+  select?: Prisma.RoomParticipantSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RoomParticipant
+   */
+  omit?: Prisma.RoomParticipantOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RoomParticipantInclude<ExtArgs> | null
+  where?: Prisma.RoomParticipantWhereInput
+  orderBy?: Prisma.RoomParticipantOrderByWithRelationInput | Prisma.RoomParticipantOrderByWithRelationInput[]
+  cursor?: Prisma.RoomParticipantWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RoomParticipantScalarFieldEnum | Prisma.RoomParticipantScalarFieldEnum[]
 }
 
 /**
