@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { JwtAuthGuard } from '../common/jwt-auth.guard.js';
 import { Roles } from '../common/roles.decorator.js';
@@ -9,9 +9,16 @@ import { RoomsService } from './rooms.service.js';
 
 @Controller('rooms')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.STAFF)
 export class RoomsController {
   constructor(private readonly rooms: RoomsService) {}
+
   @Post()
+  @Roles(Role.STAFF)
   schedule(@CurrentUser() principal: Principal, @Body() body: ScheduleRoomDto) { return this.rooms.schedule(body, principal.userId); }
+
+  @Post(':roomId/participants')
+  @Roles(Role.STUDENT)
+  admitParticipant(@CurrentUser() principal: Principal, @Param('roomId', new ParseUUIDPipe({ version: '4' })) roomId: string) {
+    return this.rooms.admitParticipant(roomId, principal.userId);
+  }
 }

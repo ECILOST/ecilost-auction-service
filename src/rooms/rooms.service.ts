@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client.js';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, RoomStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
@@ -45,5 +45,45 @@ export class RoomsService {
       }
       throw error;
     }
+  }
+
+  /**
+   * La comparacion y el incremento ocurren en la misma transaccion. El filtro por el
+   * contador leido convierte la actualizacion en optimista: frente a solicitudes
+   * simultaneas, solo una puede consumir el siguiente cupo.
+   */
+  async admitParticipant(roomId: string, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const room = await tx.room.findUnique({
+        where: { id: roomId },
+        select: { id: true, status: true, maximumCapacity: true, admittedCount: true },
+      });
+      if (!room) throw new NotFoundException('La sala no existe.');
+      if (room.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no admite nuevos participantes.');
+
+      const alreadyAdmitted = await tx.roomParticipant.findUnique({
+        where: { roomId_userId: { roomId, userId } },
+      });
+      if (alreadyAdmitted) return { participant: alreadyAdmitted, alreadyAdmitted: true };
+
+      if (room.admittedCount >= room.maximumCapacity) throw new ConflictException('Sala completa.');
+      const consumed = await tx.room.updateMany({
+        where: { id: roomId, status: RoomStatus.SCHEDULED, admittedCount: room.admittedCount },
+        data: { admittedCount: { increment: 1 } },
+      });
+      if (consumed.count !== 1) {
+        // Otra solicitud pudo haber admitido a este mismo usuario mientras esta esperaba.
+        const admittedConcurrently = await tx.roomParticipant.findUnique({
+          where: { roomId_userId: { roomId, userId } },
+        });
+        if (admittedConcurrently) return { participant: admittedConcurrently, alreadyAdmitted: true };
+        throw new ConflictException('Sala completa.');
+      }
+
+      const participant = await tx.roomParticipant.create({
+        data: { id: randomUUID(), roomId, userId },
+      });
+      return { participant, alreadyAdmitted: false };
+    });
   }
 }
