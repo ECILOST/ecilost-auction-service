@@ -6,6 +6,7 @@ class EnvironmentVariables {
   @IsUrl({ require_tld: false }) AUTH_JWKS_URL: string;
   @IsNotEmpty() @IsString() JWT_ISSUER: string;
   @IsNotEmpty() @IsString() JWT_AUDIENCE: string;
+  @IsNotEmpty() @IsString() RABBITMQ_URL: string;
 }
 
 export function validateEnv(raw: Record<string, unknown>): EnvironmentVariables {
@@ -21,6 +22,7 @@ export class AuctionConfig {
   readonly authJwksUrl: string;
   readonly jwtIssuer: string;
   readonly jwtAudience: string;
+  readonly rabbitmqUrl: string;
   constructor() {
     const env = validateEnv(process.env);
     this.databaseUrl = env.DATABASE_URL;
@@ -28,5 +30,6 @@ export class AuctionConfig {
     this.authJwksUrl = env.AUTH_JWKS_URL;
     this.jwtIssuer = env.JWT_ISSUER;
     this.jwtAudience = env.JWT_AUDIENCE;
+    this.rabbitmqUrl = env.RABBITMQ_URL;
   }
 }
