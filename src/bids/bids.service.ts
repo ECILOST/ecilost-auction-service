@@ -1,23 +1,75 @@
+import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletHoldClient } from '../events/wallet-hold.client.js';
+
+type PlacedBid = {
+  id: string;
+  roundId: string;
+  bidderId: string;
+  amount: Prisma.Decimal;
+  previousBidderId: string | null;
+  previousPrice: Prisma.Decimal | null;
+};
+
 @Injectable()
 export class BidsService {
   constructor(private readonly prisma: PrismaService, private readonly wallet: WalletHoldClient) {}
   async place(roundId: string, bidderId: string, amount: number) {
     if (!Number.isFinite(amount) || amount <= 0) throw new BadRequestException('Bid amount must be positive.');
-    const round = await this.prisma.round.findUnique({ where: { id: roundId }, include: { bids: { orderBy: { amount: 'desc' }, take: 1 } } });
+    const bidAmount = new Prisma.Decimal(amount);
+    const round = await this.prisma.round.findUnique({ where: { id: roundId }, select: { status: true, currentPrice: true } });
     if (!round) throw new NotFoundException('Round does not exist.');
-    if (round.status !== 'ACTIVE') throw new ConflictException('Round is not active.');
-    const previousLeader = round.bids[0];
-    if (previousLeader && amount <= Number(previousLeader.amount)) throw new ConflictException('Bid must improve the current bid.');
+    if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('Round is not active.');
+    if (bidAmount.lte(round.currentPrice)) throw new ConflictException('Bid must improve the current price.');
     const accepted = await this.wallet.hold(bidderId, `bid:${roundId}:${bidderId}`, amount);
     if (!accepted) throw new ConflictException('Insufficient available ECICoin.');
-    const bid = await this.prisma.bid.upsert({ where: { roundId_bidderId: { roundId, bidderId } }, create: { id: crypto.randomUUID(), roundId, bidderId, amount }, update: { amount } });
-    if (previousLeader && previousLeader.bidderId !== bidderId) {
-      const released = await this.wallet.release(previousLeader.bidderId, `bid:${roundId}:${previousLeader.bidderId}`, Number(previousLeader.amount));
+
+    const placed = await this.compareAndPlace(roundId, bidderId, bidAmount);
+    if (!placed) {
+      // La comparación de precio perdió una carrera. Como la reserva ocurrió antes
+      // de la sentencia condicional, se compensa solo si conserva ese mismo importe.
+      await this.wallet.release(bidderId, `bid:${roundId}:${bidderId}`, amount);
+      throw new ConflictException('Bid must improve the current price.');
+    }
+    if (placed.previousBidderId && placed.previousBidderId !== bidderId && placed.previousPrice) {
+      const released = await this.wallet.release(placed.previousBidderId, `bid:${roundId}:${placed.previousBidderId}`, Number(placed.previousPrice));
       if (!released) throw new ConflictException('The previous bid could not be released.');
     }
-    return bid;
+    return { id: placed.id, roundId: placed.roundId, bidderId: placed.bidderId, amount: placed.amount };
+  }
+
+  /**
+   * Compara, cambia el precio y guarda la puja en una sola sentencia local. La
+   * fila de la ronda, no el proceso Nest ni el WebSocket, serializa su precio.
+   */
+  private async compareAndPlace(roundId: string, bidderId: string, amount: Prisma.Decimal): Promise<PlacedBid | null> {
+    const rows = await this.prisma.$queryRaw<PlacedBid[]>(Prisma.sql`
+      WITH candidate AS (
+        SELECT id, "currentBidderId", "currentPrice"
+        FROM "rounds"
+        WHERE id = ${roundId}
+          AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
+          AND "currentPrice" < ${amount}
+        FOR UPDATE
+      ), updated_round AS (
+        UPDATE "rounds" AS round
+        SET "currentPrice" = ${amount}, "currentBidderId" = ${bidderId}
+        FROM candidate
+        WHERE round.id = candidate.id
+        RETURNING candidate."currentBidderId" AS "previousBidderId", candidate."currentPrice" AS "previousPrice"
+      ), placed_bid AS (
+        INSERT INTO "bids" (id, "roundId", "bidderId", amount, "createdAt", "updatedAt")
+        SELECT ${randomUUID()}, ${roundId}, ${bidderId}, ${amount}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        FROM updated_round
+        ON CONFLICT ("roundId", "bidderId")
+        DO UPDATE SET amount = EXCLUDED.amount, "updatedAt" = CURRENT_TIMESTAMP
+        RETURNING id, "roundId", "bidderId", amount
+      )
+      SELECT placed_bid.*, updated_round."previousBidderId", updated_round."previousPrice"
+      FROM placed_bid CROSS JOIN updated_round
+    `);
+    return rows[0] ?? null;
   }
 }
