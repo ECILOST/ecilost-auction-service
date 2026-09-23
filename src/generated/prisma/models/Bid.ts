@@ -28,10 +28,12 @@ export type AggregateBid = {
 
 export type BidAvgAggregateOutputType = {
   amount: runtime.Decimal | null
+  sequence: number | null
 }
 
 export type BidSumAggregateOutputType = {
   amount: runtime.Decimal | null
+  sequence: bigint | null
 }
 
 export type BidMinAggregateOutputType = {
@@ -39,6 +41,8 @@ export type BidMinAggregateOutputType = {
   roundId: string | null
   bidderId: string | null
   amount: runtime.Decimal | null
+  sequence: bigint | null
+  status: $Enums.BidStatus | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -48,6 +52,8 @@ export type BidMaxAggregateOutputType = {
   roundId: string | null
   bidderId: string | null
   amount: runtime.Decimal | null
+  sequence: bigint | null
+  status: $Enums.BidStatus | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -57,6 +63,8 @@ export type BidCountAggregateOutputType = {
   roundId: number
   bidderId: number
   amount: number
+  sequence: number
+  status: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -65,10 +73,12 @@ export type BidCountAggregateOutputType = {
 
 export type BidAvgAggregateInputType = {
   amount?: true
+  sequence?: true
 }
 
 export type BidSumAggregateInputType = {
   amount?: true
+  sequence?: true
 }
 
 export type BidMinAggregateInputType = {
@@ -76,6 +86,8 @@ export type BidMinAggregateInputType = {
   roundId?: true
   bidderId?: true
   amount?: true
+  sequence?: true
+  status?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -85,6 +97,8 @@ export type BidMaxAggregateInputType = {
   roundId?: true
   bidderId?: true
   amount?: true
+  sequence?: true
+  status?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -94,6 +108,8 @@ export type BidCountAggregateInputType = {
   roundId?: true
   bidderId?: true
   amount?: true
+  sequence?: true
+  status?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -190,6 +206,8 @@ export type BidGroupByOutputType = {
   roundId: string
   bidderId: string
   amount: runtime.Decimal
+  sequence: bigint
+  status: $Enums.BidStatus
   createdAt: Date
   updatedAt: Date
   _count: BidCountAggregateOutputType | null
@@ -222,6 +240,8 @@ export type BidWhereInput = {
   roundId?: Prisma.StringFilter<"Bid"> | string
   bidderId?: Prisma.StringFilter<"Bid"> | string
   amount?: Prisma.DecimalFilter<"Bid"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFilter<"Bid"> | bigint | number
+  status?: Prisma.EnumBidStatusFilter<"Bid"> | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFilter<"Bid"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Bid"> | Date | string
   round?: Prisma.XOR<Prisma.RoundScalarRelationFilter, Prisma.RoundWhereInput>
@@ -232,6 +252,8 @@ export type BidOrderByWithRelationInput = {
   roundId?: Prisma.SortOrder
   bidderId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   round?: Prisma.RoundOrderByWithRelationInput
@@ -239,23 +261,27 @@ export type BidOrderByWithRelationInput = {
 
 export type BidWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  roundId_bidderId?: Prisma.BidRoundIdBidderIdCompoundUniqueInput
+  roundId_sequence?: Prisma.BidRoundIdSequenceCompoundUniqueInput
   AND?: Prisma.BidWhereInput | Prisma.BidWhereInput[]
   OR?: Prisma.BidWhereInput[]
   NOT?: Prisma.BidWhereInput | Prisma.BidWhereInput[]
   roundId?: Prisma.StringFilter<"Bid"> | string
   bidderId?: Prisma.StringFilter<"Bid"> | string
   amount?: Prisma.DecimalFilter<"Bid"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFilter<"Bid"> | bigint | number
+  status?: Prisma.EnumBidStatusFilter<"Bid"> | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFilter<"Bid"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Bid"> | Date | string
   round?: Prisma.XOR<Prisma.RoundScalarRelationFilter, Prisma.RoundWhereInput>
-}, "id" | "roundId_bidderId">
+}, "id" | "roundId_sequence">
 
 export type BidOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   roundId?: Prisma.SortOrder
   bidderId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.BidCountOrderByAggregateInput
@@ -273,6 +299,8 @@ export type BidScalarWhereWithAggregatesInput = {
   roundId?: Prisma.StringWithAggregatesFilter<"Bid"> | string
   bidderId?: Prisma.StringWithAggregatesFilter<"Bid"> | string
   amount?: Prisma.DecimalWithAggregatesFilter<"Bid"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntWithAggregatesFilter<"Bid"> | bigint | number
+  status?: Prisma.EnumBidStatusWithAggregatesFilter<"Bid"> | $Enums.BidStatus
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Bid"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Bid"> | Date | string
 }
@@ -281,6 +309,8 @@ export type BidCreateInput = {
   id: string
   bidderId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence: bigint | number
+  status?: $Enums.BidStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   round: Prisma.RoundCreateNestedOneWithoutBidsInput
@@ -291,6 +321,8 @@ export type BidUncheckedCreateInput = {
   roundId: string
   bidderId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence: bigint | number
+  status?: $Enums.BidStatus
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -299,6 +331,8 @@ export type BidUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   round?: Prisma.RoundUpdateOneRequiredWithoutBidsNestedInput
@@ -309,6 +343,8 @@ export type BidUncheckedUpdateInput = {
   roundId?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -318,6 +354,8 @@ export type BidCreateManyInput = {
   roundId: string
   bidderId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence: bigint | number
+  status?: $Enums.BidStatus
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -326,6 +364,8 @@ export type BidUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -335,6 +375,8 @@ export type BidUncheckedUpdateManyInput = {
   roundId?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -349,9 +391,9 @@ export type BidOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type BidRoundIdBidderIdCompoundUniqueInput = {
+export type BidRoundIdSequenceCompoundUniqueInput = {
   roundId: string
-  bidderId: string
+  sequence: bigint | number
 }
 
 export type BidCountOrderByAggregateInput = {
@@ -359,12 +401,15 @@ export type BidCountOrderByAggregateInput = {
   roundId?: Prisma.SortOrder
   bidderId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type BidAvgOrderByAggregateInput = {
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
 }
 
 export type BidMaxOrderByAggregateInput = {
@@ -372,6 +417,8 @@ export type BidMaxOrderByAggregateInput = {
   roundId?: Prisma.SortOrder
   bidderId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -381,12 +428,15 @@ export type BidMinOrderByAggregateInput = {
   roundId?: Prisma.SortOrder
   bidderId?: Prisma.SortOrder
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type BidSumOrderByAggregateInput = {
   amount?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
 }
 
 export type BidCreateNestedManyWithoutRoundInput = {
@@ -431,10 +481,16 @@ export type BidUncheckedUpdateManyWithoutRoundNestedInput = {
   deleteMany?: Prisma.BidScalarWhereInput | Prisma.BidScalarWhereInput[]
 }
 
+export type EnumBidStatusFieldUpdateOperationsInput = {
+  set?: $Enums.BidStatus
+}
+
 export type BidCreateWithoutRoundInput = {
   id: string
   bidderId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence: bigint | number
+  status?: $Enums.BidStatus
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -443,6 +499,8 @@ export type BidUncheckedCreateWithoutRoundInput = {
   id: string
   bidderId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence: bigint | number
+  status?: $Enums.BidStatus
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -481,6 +539,8 @@ export type BidScalarWhereInput = {
   roundId?: Prisma.StringFilter<"Bid"> | string
   bidderId?: Prisma.StringFilter<"Bid"> | string
   amount?: Prisma.DecimalFilter<"Bid"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFilter<"Bid"> | bigint | number
+  status?: Prisma.EnumBidStatusFilter<"Bid"> | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFilter<"Bid"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Bid"> | Date | string
 }
@@ -489,6 +549,8 @@ export type BidCreateManyRoundInput = {
   id: string
   bidderId: string
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence: bigint | number
+  status?: $Enums.BidStatus
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -497,6 +559,8 @@ export type BidUpdateWithoutRoundInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -505,6 +569,8 @@ export type BidUncheckedUpdateWithoutRoundInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -513,6 +579,8 @@ export type BidUncheckedUpdateManyWithoutRoundInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   bidderId?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  sequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  status?: Prisma.EnumBidStatusFieldUpdateOperationsInput | $Enums.BidStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -524,6 +592,8 @@ export type BidSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   roundId?: boolean
   bidderId?: boolean
   amount?: boolean
+  sequence?: boolean
+  status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   round?: boolean | Prisma.RoundDefaultArgs<ExtArgs>
@@ -534,6 +604,8 @@ export type BidSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extension
   roundId?: boolean
   bidderId?: boolean
   amount?: boolean
+  sequence?: boolean
+  status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   round?: boolean | Prisma.RoundDefaultArgs<ExtArgs>
@@ -544,6 +616,8 @@ export type BidSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extension
   roundId?: boolean
   bidderId?: boolean
   amount?: boolean
+  sequence?: boolean
+  status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   round?: boolean | Prisma.RoundDefaultArgs<ExtArgs>
@@ -554,11 +628,13 @@ export type BidSelectScalar = {
   roundId?: boolean
   bidderId?: boolean
   amount?: boolean
+  sequence?: boolean
+  status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type BidOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roundId" | "bidderId" | "amount" | "createdAt" | "updatedAt", ExtArgs["result"]["bid"]>
+export type BidOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roundId" | "bidderId" | "amount" | "sequence" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["bid"]>
 export type BidInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   round?: boolean | Prisma.RoundDefaultArgs<ExtArgs>
 }
@@ -579,6 +655,8 @@ export type $BidPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     roundId: string
     bidderId: string
     amount: runtime.Decimal
+    sequence: bigint
+    status: $Enums.BidStatus
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["bid"]>
@@ -1009,6 +1087,8 @@ export interface BidFieldRefs {
   readonly roundId: Prisma.FieldRef<"Bid", 'String'>
   readonly bidderId: Prisma.FieldRef<"Bid", 'String'>
   readonly amount: Prisma.FieldRef<"Bid", 'Decimal'>
+  readonly sequence: Prisma.FieldRef<"Bid", 'BigInt'>
+  readonly status: Prisma.FieldRef<"Bid", 'BidStatus'>
   readonly createdAt: Prisma.FieldRef<"Bid", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Bid", 'DateTime'>
 }

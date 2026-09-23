@@ -859,7 +859,8 @@ export const RoundScalarFieldEnum = {
   position: 'position',
   status: 'status',
   currentPrice: 'currentPrice',
-  currentBidderId: 'currentBidderId'
+  currentBidderId: 'currentBidderId',
+  nextBidSequence: 'nextBidSequence'
 } as const
 
 export type RoundScalarFieldEnum = (typeof RoundScalarFieldEnum)[keyof typeof RoundScalarFieldEnum]
@@ -870,6 +871,8 @@ export const BidScalarFieldEnum = {
   roundId: 'roundId',
   bidderId: 'bidderId',
   amount: 'amount',
+  sequence: 'sequence',
+  status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -998,6 +1001,34 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BidStatus'
+ */
+export type EnumBidStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BidStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'BidStatus[]'
+ */
+export type ListEnumBidStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BidStatus[]'>
     
 
 
