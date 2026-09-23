@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client.js';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, RoomStatus, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
@@ -45,5 +45,94 @@ export class RoomsService {
       }
       throw error;
     }
+  }
+
+  /** La base de datos arbitra el aforo con una comparacion entre ambas columnas. */
+  async admitParticipant(roomId: string, userId: string) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const room = await tx.room.findUnique({
+          where: { id: roomId },
+          select: { id: true, status: true, maximumCapacity: true, admittedCount: true },
+        });
+        if (!room) throw new NotFoundException('La sala no existe.');
+
+        const alreadyAdmitted = await tx.roomParticipant.findUnique({
+          where: { roomId_userId: { roomId, userId } },
+        });
+        if (alreadyAdmitted && (room.status === RoomStatus.SCHEDULED || room.status === RoomStatus.ACTIVE)) {
+          return { participant: alreadyAdmitted, alreadyAdmitted: true };
+        }
+
+        if (room.status === RoomStatus.ACTIVE) throw new ConflictException('Sala cerrada.');
+        if (room.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no esta disponible.');
+
+        if (room.admittedCount >= room.maximumCapacity) throw new ConflictException('Sala completa.');
+        const consumed = await tx.$executeRaw`
+          UPDATE "rooms"
+          SET "admittedCount" = "admittedCount" + 1
+          WHERE "id" = ${roomId}
+            AND "status" = CAST(${RoomStatus.SCHEDULED} AS "RoomStatus")
+            AND "admittedCount" < "maximumCapacity"
+        `;
+        if (consumed !== 1) {
+          // Otra solicitud pudo haber admitido a este mismo usuario mientras esta esperaba.
+          const admittedConcurrently = await tx.roomParticipant.findUnique({
+            where: { roomId_userId: { roomId, userId } },
+          });
+          if (admittedConcurrently) return { participant: admittedConcurrently, alreadyAdmitted: true };
+          const currentRoom = await tx.room.findUnique({
+            where: { id: roomId },
+            select: { status: true, maximumCapacity: true, admittedCount: true },
+          });
+          if (!currentRoom) throw new NotFoundException('La sala no existe.');
+          if (currentRoom.status === RoomStatus.ACTIVE) throw new ConflictException('Sala cerrada.');
+          if (currentRoom.status !== RoomStatus.SCHEDULED) throw new ConflictException('La sala no esta disponible.');
+          if (currentRoom.admittedCount >= currentRoom.maximumCapacity) throw new ConflictException('Sala completa.');
+          throw new ConflictException('No fue posible reservar un cupo. Intenta de nuevo.');
+        }
+
+        const participant = await tx.roomParticipant.create({
+          data: { id: randomUUID(), roomId, userId },
+        });
+        return { participant, alreadyAdmitted: false };
+      });
+    } catch (error) {
+      // Una segunda solicitud simultanea del mismo estudiante revierte su incremento
+      // por la restriccion unica; luego se responde como reconexion idempotente.
+      if ((error as { code?: string }).code === 'P2002') {
+        const participant = await this.prisma.roomParticipant.findUnique({ where: { roomId_userId: { roomId, userId } } });
+        if (participant) return { participant, alreadyAdmitted: true };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Cambia una sala a ACTIVE una sola vez cuando llega su hora de inicio y abre
+   * su primera ronda. Las rondas posteriores conservan su propio ciclo de vida.
+   */
+  async activateDueRooms(now = new Date()) {
+    return this.prisma.$transaction(async (tx) => {
+      const dueRooms = await tx.room.findMany({
+        where: { status: RoomStatus.SCHEDULED, startsAt: { lte: now } },
+        select: { id: true },
+      });
+      let count = 0;
+      for (const room of dueRooms) {
+        // La condición preserva el resultado si dos ciclos del scheduler se cruzan.
+        const activated = await tx.room.updateMany({
+          where: { id: room.id, status: RoomStatus.SCHEDULED, startsAt: { lte: now } },
+          data: { status: RoomStatus.ACTIVE },
+        });
+        if (activated.count !== 1) continue;
+        count += 1;
+        await tx.round.updateMany({
+          where: { roomId: room.id, position: 1, status: RoundStatus.SCHEDULED },
+          data: { status: RoundStatus.ACTIVE },
+        });
+      }
+      return { count };
+    });
   }
 }

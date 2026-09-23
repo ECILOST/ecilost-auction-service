@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Room.js'
+export type * from './models/RoomParticipant.js'
 export type * from './models/Round.js'
 export type * from './models/Bid.js'
 export type * from './models/RoundEntry.js'

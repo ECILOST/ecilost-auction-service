@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   Room: 'Room',
+  RoomParticipant: 'RoomParticipant',
   Round: 'Round',
   Bid: 'Bid',
   RoundEntry: 'RoundEntry'
@@ -77,12 +78,23 @@ export const RoomScalarFieldEnum = {
   id: 'id',
   status: 'status',
   maximumCapacity: 'maximumCapacity',
+  admittedCount: 'admittedCount',
   startsAt: 'startsAt',
   scheduledBy: 'scheduledBy',
   createdAt: 'createdAt'
 } as const
 
 export type RoomScalarFieldEnum = (typeof RoomScalarFieldEnum)[keyof typeof RoomScalarFieldEnum]
+
+
+export const RoomParticipantScalarFieldEnum = {
+  id: 'id',
+  roomId: 'roomId',
+  userId: 'userId',
+  admittedAt: 'admittedAt'
+} as const
+
+export type RoomParticipantScalarFieldEnum = (typeof RoomParticipantScalarFieldEnum)[keyof typeof RoomParticipantScalarFieldEnum]
 
 
 export const RoundScalarFieldEnum = {
