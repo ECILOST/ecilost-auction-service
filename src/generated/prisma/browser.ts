@@ -28,6 +28,11 @@ export type Room = Prisma.RoomModel
  */
 export type Round = Prisma.RoundModel
 /**
+ * Model Bid
+ * 
+ */
+export type Bid = Prisma.BidModel
+/**
  * Model RoundEntry
  * 
  */

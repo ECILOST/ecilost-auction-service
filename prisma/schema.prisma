@@ -20,6 +20,11 @@ enum AuctionableKind {
   ITEM
   LOT
 }
+enum RoundStatus {
+  SCHEDULED
+  ACTIVE
+  CLOSED
+}
 
 model Room {
   id String @id
@@ -39,8 +44,23 @@ model Round {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
   position Int
   entries RoundEntry[]
+  bids Bid[]
+  status RoundStatus @default(SCHEDULED)
   @@unique([roomId, position])
   @@map("rounds")
+}
+
+model Bid {
+  id String @id
+  roundId String
+  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  bidderId String
+  amount Decimal @db.Decimal(18, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([roundId, bidderId])
+  @@index([roundId, amount])
+  @@map("bids")
 }
 
 model RoundEntry {

@@ -25,3 +25,12 @@ export const AuctionableKind = {
 } as const
 
 export type AuctionableKind = (typeof AuctionableKind)[keyof typeof AuctionableKind]
+
+
+export const RoundStatus = {
+  SCHEDULED: 'SCHEDULED',
+  ACTIVE: 'ACTIVE',
+  CLOSED: 'CLOSED'
+} as const
+
+export type RoundStatus = (typeof RoundStatus)[keyof typeof RoundStatus]

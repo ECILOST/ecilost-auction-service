@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Room: 'Room',
   Round: 'Round',
+  Bid: 'Bid',
   RoundEntry: 'RoundEntry'
 } as const
 
@@ -87,10 +88,23 @@ export type RoomScalarFieldEnum = (typeof RoomScalarFieldEnum)[keyof typeof Room
 export const RoundScalarFieldEnum = {
   id: 'id',
   roomId: 'roomId',
-  position: 'position'
+  position: 'position',
+  status: 'status'
 } as const
 
 export type RoundScalarFieldEnum = (typeof RoundScalarFieldEnum)[keyof typeof RoundScalarFieldEnum]
+
+
+export const BidScalarFieldEnum = {
+  id: 'id',
+  roundId: 'roundId',
+  bidderId: 'bidderId',
+  amount: 'amount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BidScalarFieldEnum = (typeof BidScalarFieldEnum)[keyof typeof BidScalarFieldEnum]
 
 
 export const RoundEntryScalarFieldEnum = {
