@@ -9,9 +9,15 @@ export class BidsService {
     const round = await this.prisma.round.findUnique({ where: { id: roundId }, include: { bids: { orderBy: { amount: 'desc' }, take: 1 } } });
     if (!round) throw new NotFoundException('Round does not exist.');
     if (round.status !== 'ACTIVE') throw new ConflictException('Round is not active.');
-    if (round.bids[0] && amount <= Number(round.bids[0].amount)) throw new ConflictException('Bid must improve the current bid.');
+    const previousLeader = round.bids[0];
+    if (previousLeader && amount <= Number(previousLeader.amount)) throw new ConflictException('Bid must improve the current bid.');
     const accepted = await this.wallet.hold(bidderId, `bid:${roundId}:${bidderId}`, amount);
     if (!accepted) throw new ConflictException('Insufficient available ECICoin.');
-    return this.prisma.bid.upsert({ where: { roundId_bidderId: { roundId, bidderId } }, create: { id: crypto.randomUUID(), roundId, bidderId, amount }, update: { amount } });
+    const bid = await this.prisma.bid.upsert({ where: { roundId_bidderId: { roundId, bidderId } }, create: { id: crypto.randomUUID(), roundId, bidderId, amount }, update: { amount } });
+    if (previousLeader && previousLeader.bidderId !== bidderId) {
+      const released = await this.wallet.release(previousLeader.bidderId, `bid:${roundId}:${previousLeader.bidderId}`, Number(previousLeader.amount));
+      if (!released) throw new ConflictException('The previous bid could not be released.');
+    }
+    return bid;
   }
 }
