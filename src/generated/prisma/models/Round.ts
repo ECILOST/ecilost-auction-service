@@ -38,18 +38,21 @@ export type RoundMinAggregateOutputType = {
   id: string | null
   roomId: string | null
   position: number | null
+  status: $Enums.RoundStatus | null
 }
 
 export type RoundMaxAggregateOutputType = {
   id: string | null
   roomId: string | null
   position: number | null
+  status: $Enums.RoundStatus | null
 }
 
 export type RoundCountAggregateOutputType = {
   id: number
   roomId: number
   position: number
+  status: number
   _all: number
 }
 
@@ -66,18 +69,21 @@ export type RoundMinAggregateInputType = {
   id?: true
   roomId?: true
   position?: true
+  status?: true
 }
 
 export type RoundMaxAggregateInputType = {
   id?: true
   roomId?: true
   position?: true
+  status?: true
 }
 
 export type RoundCountAggregateInputType = {
   id?: true
   roomId?: true
   position?: true
+  status?: true
   _all?: true
 }
 
@@ -171,6 +177,7 @@ export type RoundGroupByOutputType = {
   id: string
   roomId: string
   position: number
+  status: $Enums.RoundStatus
   _count: RoundCountAggregateOutputType | null
   _avg: RoundAvgAggregateOutputType | null
   _sum: RoundSumAggregateOutputType | null
@@ -200,16 +207,20 @@ export type RoundWhereInput = {
   id?: Prisma.StringFilter<"Round"> | string
   roomId?: Prisma.StringFilter<"Round"> | string
   position?: Prisma.IntFilter<"Round"> | number
+  status?: Prisma.EnumRoundStatusFilter<"Round"> | $Enums.RoundStatus
   room?: Prisma.XOR<Prisma.RoomScalarRelationFilter, Prisma.RoomWhereInput>
   entries?: Prisma.RoundEntryListRelationFilter
+  bids?: Prisma.BidListRelationFilter
 }
 
 export type RoundOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   room?: Prisma.RoomOrderByWithRelationInput
   entries?: Prisma.RoundEntryOrderByRelationAggregateInput
+  bids?: Prisma.BidOrderByRelationAggregateInput
 }
 
 export type RoundWhereUniqueInput = Prisma.AtLeast<{
@@ -220,14 +231,17 @@ export type RoundWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.RoundWhereInput | Prisma.RoundWhereInput[]
   roomId?: Prisma.StringFilter<"Round"> | string
   position?: Prisma.IntFilter<"Round"> | number
+  status?: Prisma.EnumRoundStatusFilter<"Round"> | $Enums.RoundStatus
   room?: Prisma.XOR<Prisma.RoomScalarRelationFilter, Prisma.RoomWhereInput>
   entries?: Prisma.RoundEntryListRelationFilter
+  bids?: Prisma.BidListRelationFilter
 }, "id" | "roomId_position">
 
 export type RoundOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   _count?: Prisma.RoundCountOrderByAggregateInput
   _avg?: Prisma.RoundAvgOrderByAggregateInput
   _max?: Prisma.RoundMaxOrderByAggregateInput
@@ -242,51 +256,63 @@ export type RoundScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Round"> | string
   roomId?: Prisma.StringWithAggregatesFilter<"Round"> | string
   position?: Prisma.IntWithAggregatesFilter<"Round"> | number
+  status?: Prisma.EnumRoundStatusWithAggregatesFilter<"Round"> | $Enums.RoundStatus
 }
 
 export type RoundCreateInput = {
   id: string
   position: number
+  status?: $Enums.RoundStatus
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateInput = {
   id: string
   roomId: string
   position: number
+  status?: $Enums.RoundStatus
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateManyInput = {
   id: string
   roomId: string
   position: number
+  status?: $Enums.RoundStatus
 }
 
 export type RoundUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
 }
 
 export type RoundUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
 }
 
 export type RoundListRelationFilter = {
@@ -308,6 +334,7 @@ export type RoundCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type RoundAvgOrderByAggregateInput = {
@@ -318,12 +345,14 @@ export type RoundMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type RoundMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type RoundSumOrderByAggregateInput = {
@@ -377,6 +406,24 @@ export type RoundUncheckedUpdateManyWithoutRoomNestedInput = {
   deleteMany?: Prisma.RoundScalarWhereInput | Prisma.RoundScalarWhereInput[]
 }
 
+export type EnumRoundStatusFieldUpdateOperationsInput = {
+  set?: $Enums.RoundStatus
+}
+
+export type RoundCreateNestedOneWithoutBidsInput = {
+  create?: Prisma.XOR<Prisma.RoundCreateWithoutBidsInput, Prisma.RoundUncheckedCreateWithoutBidsInput>
+  connectOrCreate?: Prisma.RoundCreateOrConnectWithoutBidsInput
+  connect?: Prisma.RoundWhereUniqueInput
+}
+
+export type RoundUpdateOneRequiredWithoutBidsNestedInput = {
+  create?: Prisma.XOR<Prisma.RoundCreateWithoutBidsInput, Prisma.RoundUncheckedCreateWithoutBidsInput>
+  connectOrCreate?: Prisma.RoundCreateOrConnectWithoutBidsInput
+  upsert?: Prisma.RoundUpsertWithoutBidsInput
+  connect?: Prisma.RoundWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RoundUpdateToOneWithWhereWithoutBidsInput, Prisma.RoundUpdateWithoutBidsInput>, Prisma.RoundUncheckedUpdateWithoutBidsInput>
+}
+
 export type RoundCreateNestedOneWithoutEntriesInput = {
   create?: Prisma.XOR<Prisma.RoundCreateWithoutEntriesInput, Prisma.RoundUncheckedCreateWithoutEntriesInput>
   connectOrCreate?: Prisma.RoundCreateOrConnectWithoutEntriesInput
@@ -394,13 +441,17 @@ export type RoundUpdateOneRequiredWithoutEntriesNestedInput = {
 export type RoundCreateWithoutRoomInput = {
   id: string
   position: number
+  status?: $Enums.RoundStatus
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutRoomInput = {
   id: string
   position: number
+  status?: $Enums.RoundStatus
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutRoomInput = {
@@ -436,18 +487,71 @@ export type RoundScalarWhereInput = {
   id?: Prisma.StringFilter<"Round"> | string
   roomId?: Prisma.StringFilter<"Round"> | string
   position?: Prisma.IntFilter<"Round"> | number
+  status?: Prisma.EnumRoundStatusFilter<"Round"> | $Enums.RoundStatus
+}
+
+export type RoundCreateWithoutBidsInput = {
+  id: string
+  position: number
+  status?: $Enums.RoundStatus
+  room: Prisma.RoomCreateNestedOneWithoutRoundsInput
+  entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
+}
+
+export type RoundUncheckedCreateWithoutBidsInput = {
+  id: string
+  roomId: string
+  position: number
+  status?: $Enums.RoundStatus
+  entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
+}
+
+export type RoundCreateOrConnectWithoutBidsInput = {
+  where: Prisma.RoundWhereUniqueInput
+  create: Prisma.XOR<Prisma.RoundCreateWithoutBidsInput, Prisma.RoundUncheckedCreateWithoutBidsInput>
+}
+
+export type RoundUpsertWithoutBidsInput = {
+  update: Prisma.XOR<Prisma.RoundUpdateWithoutBidsInput, Prisma.RoundUncheckedUpdateWithoutBidsInput>
+  create: Prisma.XOR<Prisma.RoundCreateWithoutBidsInput, Prisma.RoundUncheckedCreateWithoutBidsInput>
+  where?: Prisma.RoundWhereInput
+}
+
+export type RoundUpdateToOneWithWhereWithoutBidsInput = {
+  where?: Prisma.RoundWhereInput
+  data: Prisma.XOR<Prisma.RoundUpdateWithoutBidsInput, Prisma.RoundUncheckedUpdateWithoutBidsInput>
+}
+
+export type RoundUpdateWithoutBidsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
+  entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
+}
+
+export type RoundUncheckedUpdateWithoutBidsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  roomId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateWithoutEntriesInput = {
   id: string
   position: number
+  status?: $Enums.RoundStatus
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
+  bids?: Prisma.BidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutEntriesInput = {
   id: string
   roomId: string
   position: number
+  status?: $Enums.RoundStatus
+  bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutEntriesInput = {
@@ -469,35 +573,45 @@ export type RoundUpdateToOneWithWhereWithoutEntriesInput = {
 export type RoundUpdateWithoutEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
+  bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateManyRoomInput = {
   id: string
   position: number
+  status?: $Enums.RoundStatus
 }
 
 export type RoundUpdateWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateManyWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
 }
 
 
@@ -507,10 +621,12 @@ export type RoundUncheckedUpdateManyWithoutRoomInput = {
 
 export type RoundCountOutputType = {
   entries: number
+  bids: number
 }
 
 export type RoundCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entries?: boolean | RoundCountOutputTypeCountEntriesArgs
+  bids?: boolean | RoundCountOutputTypeCountBidsArgs
 }
 
 /**
@@ -530,13 +646,22 @@ export type RoundCountOutputTypeCountEntriesArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.RoundEntryWhereInput
 }
 
+/**
+ * RoundCountOutputType without action
+ */
+export type RoundCountOutputTypeCountBidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BidWhereInput
+}
+
 
 export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   roomId?: boolean
   position?: boolean
+  status?: boolean
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
+  bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
   _count?: boolean | Prisma.RoundCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -544,6 +669,7 @@ export type RoundSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   id?: boolean
   roomId?: boolean
   position?: boolean
+  status?: boolean
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -551,6 +677,7 @@ export type RoundSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   id?: boolean
   roomId?: boolean
   position?: boolean
+  status?: boolean
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -558,12 +685,14 @@ export type RoundSelectScalar = {
   id?: boolean
   roomId?: boolean
   position?: boolean
+  status?: boolean
 }
 
-export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position", ExtArgs["result"]["round"]>
+export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status", ExtArgs["result"]["round"]>
 export type RoundInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
+  bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
   _count?: boolean | Prisma.RoundCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoundIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -578,11 +707,13 @@ export type $RoundPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   objects: {
     room: Prisma.$RoomPayload<ExtArgs>
     entries: Prisma.$RoundEntryPayload<ExtArgs>[]
+    bids: Prisma.$BidPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     roomId: string
     position: number
+    status: $Enums.RoundStatus
   }, ExtArgs["result"]["round"]>
   composites: {}
 }
@@ -979,6 +1110,7 @@ export interface Prisma__RoundClient<T, Null = never, ExtArgs extends runtime.Ty
   readonly [Symbol.toStringTag]: "PrismaPromise"
   room<T extends Prisma.RoomDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoomDefaultArgs<ExtArgs>>): Prisma.Prisma__RoomClient<runtime.Types.Result.GetResult<Prisma.$RoomPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   entries<T extends Prisma.Round$entriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoundEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  bids<T extends Prisma.Round$bidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$bidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1011,6 +1143,7 @@ export interface RoundFieldRefs {
   readonly id: Prisma.FieldRef<"Round", 'String'>
   readonly roomId: Prisma.FieldRef<"Round", 'String'>
   readonly position: Prisma.FieldRef<"Round", 'Int'>
+  readonly status: Prisma.FieldRef<"Round", 'RoundStatus'>
 }
     
 
@@ -1433,6 +1566,30 @@ export type Round$entriesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.RoundEntryScalarFieldEnum | Prisma.RoundEntryScalarFieldEnum[]
+}
+
+/**
+ * Round.bids
+ */
+export type Round$bidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Bid
+   */
+  select?: Prisma.BidSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Bid
+   */
+  omit?: Prisma.BidOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BidInclude<ExtArgs> | null
+  where?: Prisma.BidWhereInput
+  orderBy?: Prisma.BidOrderByWithRelationInput | Prisma.BidOrderByWithRelationInput[]
+  cursor?: Prisma.BidWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BidScalarFieldEnum | Prisma.BidScalarFieldEnum[]
 }
 
 /**

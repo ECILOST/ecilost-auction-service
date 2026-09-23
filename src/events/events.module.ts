@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
 import { CatalogReservationClient } from './catalog-reservation.client.js';
-@Module({ providers: [CatalogReservationClient], exports: [CatalogReservationClient] })
+import { WalletHoldClient } from './wallet-hold.client.js';
+@Module({ providers: [CatalogReservationClient, WalletHoldClient], exports: [CatalogReservationClient, WalletHoldClient] })
 export class EventsModule {}
