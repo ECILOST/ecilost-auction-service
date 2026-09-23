@@ -26,6 +26,11 @@ enum RoundStatus {
   CLOSED
 }
 
+enum BidStatus {
+  ACCEPTED
+  REJECTED
+}
+
 model Room {
   id String @id
   status RoomStatus @default(SCHEDULED)
@@ -63,20 +68,23 @@ model Round {
   status          RoundStatus @default(SCHEDULED)
   currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
   currentBidderId String?
+  nextBidSequence BigInt      @default(0)
   @@unique([roomId, position])
   @@map("rounds")
 }
 
 model Bid {
-  id String @id
-  roundId String
-  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  bidderId String
-  amount Decimal @db.Decimal(18, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([roundId, bidderId])
-  @@index([roundId, amount])
+  id        String    @id
+  roundId   String
+  round     Round     @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  bidderId  String
+  amount    Decimal   @db.Decimal(18, 2)
+  sequence  BigInt
+  status    BidStatus @default(ACCEPTED)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@unique([roundId, sequence])
+  @@index([roundId, status, sequence])
   @@map("bids")
 }
 

@@ -34,3 +34,11 @@ export const RoundStatus = {
 } as const
 
 export type RoundStatus = (typeof RoundStatus)[keyof typeof RoundStatus]
+
+
+export const BidStatus = {
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type BidStatus = (typeof BidStatus)[keyof typeof BidStatus]
