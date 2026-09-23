@@ -54,13 +54,15 @@ model RoomParticipant {
 }
 
 model Round {
-  id String @id
-  roomId String
-  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  position Int
-  entries RoundEntry[]
-  bids Bid[]
-  status RoundStatus @default(SCHEDULED)
+  id              String      @id
+  roomId          String
+  room            Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  position        Int
+  entries         RoundEntry[]
+  bids            Bid[]
+  status          RoundStatus @default(SCHEDULED)
+  currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
+  currentBidderId String?
   @@unique([roomId, position])
   @@map("rounds")
 }

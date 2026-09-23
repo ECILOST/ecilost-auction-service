@@ -101,7 +101,9 @@ export const RoundScalarFieldEnum = {
   id: 'id',
   roomId: 'roomId',
   position: 'position',
-  status: 'status'
+  status: 'status',
+  currentPrice: 'currentPrice',
+  currentBidderId: 'currentBidderId'
 } as const
 
 export type RoundScalarFieldEnum = (typeof RoundScalarFieldEnum)[keyof typeof RoundScalarFieldEnum]
@@ -143,4 +145,12 @@ export const QueryMode = {
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
