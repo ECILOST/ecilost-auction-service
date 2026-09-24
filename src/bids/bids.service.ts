@@ -57,13 +57,15 @@ export class BidsService {
         FROM "rounds"
         WHERE id = ${roundId}
           AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
+          AND "endsAt" > CURRENT_TIMESTAMP
         FOR UPDATE
       ), sequenced AS (
         UPDATE "rounds" AS round
         SET
           "nextBidSequence" = round."nextBidSequence" + 1,
           "currentPrice" = CASE WHEN candidate."currentPrice" < ${amount} THEN ${amount} ELSE round."currentPrice" END,
-          "currentBidderId" = CASE WHEN candidate."currentPrice" < ${amount} THEN ${bidderId} ELSE round."currentBidderId" END
+          "currentBidderId" = CASE WHEN candidate."currentPrice" < ${amount} THEN ${bidderId} ELSE round."currentBidderId" END,
+          "endsAt" = CASE WHEN candidate."currentPrice" < ${amount} AND round."endsAt" < round."maximumEndsAt" THEN LEAST(round."endsAt" + INTERVAL '10 seconds', round."maximumEndsAt") ELSE round."endsAt" END
         FROM candidate
         WHERE round.id = candidate.id
         RETURNING candidate."currentBidderId" AS "previousBidderId", candidate."currentPrice" AS "previousPrice", round."nextBidSequence" AS sequence
