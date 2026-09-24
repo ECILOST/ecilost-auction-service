@@ -53,7 +53,7 @@ export class BidsService {
   private async compareAndPlace(roundId: string, bidderId: string, amount: Prisma.Decimal): Promise<PlacedBid | null> {
     const rows = await this.prisma.$queryRaw<PlacedBid[]>(Prisma.sql`
       WITH candidate AS (
-        SELECT id, "currentBidderId", "currentPrice"
+        SELECT id, "roomId", position, "currentBidderId", "currentPrice"
         FROM "rounds"
         WHERE id = ${roundId}
           AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
@@ -68,7 +68,7 @@ export class BidsService {
           "endsAt" = CASE WHEN candidate."currentPrice" < ${amount} AND round."endsAt" < round."maximumEndsAt" THEN LEAST(round."endsAt" + INTERVAL '10 seconds', round."maximumEndsAt") ELSE round."endsAt" END
         FROM candidate
         WHERE round.id = candidate.id
-        RETURNING candidate."currentBidderId" AS "previousBidderId", candidate."currentPrice" AS "previousPrice", round."nextBidSequence" AS sequence
+        RETURNING candidate."currentBidderId" AS "previousBidderId", candidate."currentPrice" AS "previousPrice", candidate."roomId" AS "roomId", candidate.position AS position, round."currentPrice" AS "currentPrice", round."currentBidderId" AS "currentBidderId", round."endsAt" AS "endsAt", round."nextBidSequence" AS sequence
       ), placed_bid AS (
         INSERT INTO "bids" (id, "roundId", "bidderId", amount, sequence, status, "createdAt", "updatedAt")
         SELECT ${randomUUID()}, ${roundId}, ${bidderId}, ${amount}, sequenced.sequence,
@@ -76,6 +76,35 @@ export class BidsService {
           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         FROM sequenced
         RETURNING id, "roundId", "bidderId", amount, sequence, status
+      ),
+      outbox_event AS (
+        INSERT INTO "outbox_events" ("id", "eventType", "routingKey", "aggregateId", "aggregateSequence", "payload")
+        SELECT
+          placed_bid.id,
+          'auction.bid.accepted.v1',
+          'auction.bid.accepted.v1',
+          placed_bid."roundId",
+          placed_bid.sequence,
+          jsonb_build_object(
+            'eventId', placed_bid.id,
+            'eventType', 'auction.bid.accepted.v1',
+            'occurredAt', to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+            'roomId', sequenced."roomId",
+            'roundId', placed_bid."roundId",
+            'position', sequenced.position,
+            'bidId', placed_bid.id,
+            'bidderId', placed_bid."bidderId",
+            'amount', placed_bid.amount::text,
+            'previousBidderId', sequenced."previousBidderId",
+            'previousPrice', sequenced."previousPrice"::text,
+            'currentBidderId', sequenced."currentBidderId",
+            'currentPrice', sequenced."currentPrice"::text,
+            'endsAt', to_char(sequenced."endsAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+            'sequence', placed_bid.sequence::text
+          )
+        FROM placed_bid CROSS JOIN sequenced
+        WHERE placed_bid.status = CAST('ACCEPTED' AS "BidStatus")
+        RETURNING id
       )
       SELECT placed_bid.*, sequenced."previousBidderId", sequenced."previousPrice"
       FROM placed_bid CROSS JOIN sequenced

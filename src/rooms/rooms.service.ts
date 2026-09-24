@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RoomStatus, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
@@ -14,6 +14,50 @@ function roundTiming(startedAt: Date) {
     endsAt: new Date(startedAt.getTime() + ROUND_DURATION_MS),
     maximumEndsAt: new Date(startedAt.getTime() + MAX_ROUND_DURATION_MS),
   };
+}
+
+type RoundEventSnapshot = {
+  id: string;
+  roomId: string;
+  position: number;
+  currentPrice: Prisma.Decimal;
+  currentBidderId: string | null;
+  startedAt: Date | null;
+  endsAt: Date | null;
+  maximumEndsAt: Date | null;
+  entries: Array<{ kind: string; catalogId: string }>;
+};
+
+async function enqueueRoundEvent(
+  tx: Prisma.TransactionClient,
+  eventType: 'auction.round.activated.v1' | 'auction.round.closed.v1',
+  round: RoundEventSnapshot,
+  closedAt?: Date,
+) {
+  const eventId = randomUUID();
+  await tx.outboxEvent.create({
+    data: {
+      id: eventId,
+      eventType,
+      routingKey: eventType,
+      aggregateId: round.id,
+      payload: {
+        eventId,
+        eventType,
+        occurredAt: new Date().toISOString(),
+        roomId: round.roomId,
+        roundId: round.id,
+        position: round.position,
+        currentPrice: round.currentPrice.toString(),
+        currentBidderId: round.currentBidderId,
+        startedAt: round.startedAt?.toISOString() ?? null,
+        endsAt: round.endsAt?.toISOString() ?? null,
+        maximumEndsAt: round.maximumEndsAt?.toISOString() ?? null,
+        entries: round.entries.map((entry) => ({ kind: entry.kind, catalogId: entry.catalogId })),
+        ...(closedAt ? { closedAt: closedAt.toISOString() } : {}),
+      },
+    },
+  });
 }
 
 @Injectable()
@@ -119,6 +163,36 @@ export class RoomsService {
     }
   }
 
+  async getCurrentState(roomId: string, userId: string) {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: {
+        id: true,
+        status: true,
+        participants: { where: { userId }, select: { id: true }, take: 1 },
+        rounds: {
+          where: { status: RoundStatus.ACTIVE },
+          orderBy: { position: 'asc' },
+          take: 1,
+          select: {
+            id: true,
+            position: true,
+            status: true,
+            currentPrice: true,
+            currentBidderId: true,
+            startedAt: true,
+            endsAt: true,
+            entries: { select: { kind: true, catalogId: true } },
+          },
+        },
+      },
+    });
+    if (!room) throw new NotFoundException('La sala no existe.');
+    if (room.participants.length === 0) throw new ForbiddenException('Debes estar admitido en la sala para consultar su estado.');
+
+    const { participants: _participants, rounds, ...roomState } = room;
+    return { ...roomState, currentRound: rounds[0] ?? null, serverTime: new Date() };
+  }
   /**
    * Cambia una sala a ACTIVE una sola vez cuando llega su hora de inicio y abre
    * su primera ronda. Las rondas posteriores conservan su propio ciclo de vida.
@@ -138,10 +212,21 @@ export class RoomsService {
         });
         if (activated.count !== 1) continue;
         count += 1;
-        await tx.round.updateMany({
+        const firstRound = await tx.round.updateMany({
           where: { roomId: room.id, position: 1, status: RoundStatus.SCHEDULED },
           data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
         });
+        if (firstRound.count === 1) {
+          const activatedRound = await tx.round.findFirst({
+            where: { roomId: room.id, position: 1, status: RoundStatus.ACTIVE },
+            select: {
+              id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
+              startedAt: true, endsAt: true, maximumEndsAt: true,
+              entries: { select: { kind: true, catalogId: true } },
+            },
+          });
+          if (activatedRound) await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound);
+        }
       }
 
       // Recupera rondas que ya estaban activas antes de que existieran los campos de tiempo.
@@ -158,7 +243,11 @@ export class RoomsService {
 
       const expiredRounds = await tx.round.findMany({
         where: { status: RoundStatus.ACTIVE, endsAt: { lte: now } },
-        select: { id: true, roomId: true, position: true },
+        select: {
+          id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
+          startedAt: true, endsAt: true, maximumEndsAt: true,
+          entries: { select: { kind: true, catalogId: true } },
+        },
       });
       for (const round of expiredRounds) {
         const closed = await tx.round.updateMany({
@@ -167,16 +256,29 @@ export class RoomsService {
         });
         if (closed.count !== 1) continue;
 
+        await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, now);
+
         const nextRound = await tx.round.findFirst({
           where: { roomId: round.roomId, position: { gt: round.position }, status: RoundStatus.SCHEDULED },
           orderBy: { position: 'asc' },
           select: { id: true },
         });
         if (nextRound) {
-          await tx.round.updateMany({
+          const activated = await tx.round.updateMany({
             where: { id: nextRound.id, status: RoundStatus.SCHEDULED },
             data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
           });
+          if (activated.count === 1) {
+            const activatedRound = await tx.round.findUnique({
+              where: { id: nextRound.id },
+              select: {
+                id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
+                startedAt: true, endsAt: true, maximumEndsAt: true,
+                entries: { select: { kind: true, catalogId: true } },
+              },
+            });
+            if (activatedRound) await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound);
+          }
         } else {
           await tx.room.updateMany({
             where: { id: round.roomId, status: RoomStatus.ACTIVE },

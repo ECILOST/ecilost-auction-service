@@ -104,3 +104,18 @@ model RoundEntry {
   @@index([roundId])
   @@map("round_entries")
 }
+model OutboxEvent {
+  id                String    @id
+  eventType         String
+  routingKey        String
+  aggregateId       String
+  aggregateSequence BigInt?
+  payload           Json
+  occurredAt        DateTime  @default(now())
+  publishedAt       DateTime?
+  attempts          Int       @default(0)
+  lastError         String?
+
+  @@index([publishedAt, occurredAt])
+  @@map("outbox_events")
+}

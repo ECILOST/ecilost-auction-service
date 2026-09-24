@@ -66,3 +66,8 @@ export type Bid = Prisma.BidModel
  * 
  */
 export type RoundEntry = Prisma.RoundEntryModel
+/**
+ * Model OutboxEvent
+ * 
+ */
+export type OutboxEvent = Prisma.OutboxEventModel
