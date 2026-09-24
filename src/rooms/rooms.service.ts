@@ -5,6 +5,17 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
+const ROUND_DURATION_MS = 3 * 60 * 1000;
+const MAX_ROUND_DURATION_MS = 8 * 60 * 1000;
+
+function roundTiming(startedAt: Date) {
+  return {
+    startedAt,
+    endsAt: new Date(startedAt.getTime() + ROUND_DURATION_MS),
+    maximumEndsAt: new Date(startedAt.getTime() + MAX_ROUND_DURATION_MS),
+  };
+}
+
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService, private readonly catalog: CatalogReservationClient) {}
@@ -129,8 +140,49 @@ export class RoomsService {
         count += 1;
         await tx.round.updateMany({
           where: { roomId: room.id, position: 1, status: RoundStatus.SCHEDULED },
-          data: { status: RoundStatus.ACTIVE },
+          data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
         });
+      }
+
+      // Recupera rondas que ya estaban activas antes de que existieran los campos de tiempo.
+      const activeRoundsWithoutTiming = await tx.round.findMany({
+        where: { status: RoundStatus.ACTIVE, endsAt: null },
+        select: { id: true },
+      });
+      for (const round of activeRoundsWithoutTiming) {
+        await tx.round.updateMany({
+          where: { id: round.id, status: RoundStatus.ACTIVE, endsAt: null },
+          data: roundTiming(now),
+        });
+      }
+
+      const expiredRounds = await tx.round.findMany({
+        where: { status: RoundStatus.ACTIVE, endsAt: { lte: now } },
+        select: { id: true, roomId: true, position: true },
+      });
+      for (const round of expiredRounds) {
+        const closed = await tx.round.updateMany({
+          where: { id: round.id, status: RoundStatus.ACTIVE, endsAt: { lte: now } },
+          data: { status: RoundStatus.CLOSED },
+        });
+        if (closed.count !== 1) continue;
+
+        const nextRound = await tx.round.findFirst({
+          where: { roomId: round.roomId, position: { gt: round.position }, status: RoundStatus.SCHEDULED },
+          orderBy: { position: 'asc' },
+          select: { id: true },
+        });
+        if (nextRound) {
+          await tx.round.updateMany({
+            where: { id: nextRound.id, status: RoundStatus.SCHEDULED },
+            data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
+          });
+        } else {
+          await tx.room.updateMany({
+            where: { id: round.roomId, status: RoomStatus.ACTIVE },
+            data: { status: RoomStatus.CLOSED },
+          });
+        }
       }
       return { count };
     });
