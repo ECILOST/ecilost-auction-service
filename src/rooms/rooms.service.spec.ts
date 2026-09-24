@@ -1,5 +1,6 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
+import { Prisma } from '../generated/prisma/client.js';
 import { RoomsService } from './rooms.service.js';
 import { AuctionableKindDto } from './dto/schedule-room.dto.js';
 
@@ -108,32 +109,76 @@ describe('RoomsService', () => {
     await expect(service.admitParticipant('room', 'student')).resolves.toEqual({ participant, alreadyAdmitted: true });
     expect(tx.roomParticipant.create).not.toHaveBeenCalled();
   });
-  it('activa las salas vencidas y abre su primera ronda', async () => {
-    const tx = {
-      room: {
-        findMany: vi.fn().mockResolvedValue([{ id: 'room-1' }, { id: 'room-2' }]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-      round: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
-    };
-    const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
-    const now = new Date('2030-01-01T10:00:00.000Z');
-    await expect(service.activateDueRooms(now)).resolves.toEqual({ count: 2 });
+  const now = new Date('2030-01-01T10:00:00.000Z');
+  const roundSnapshot = (id: string, position: number) => ({
+    id, roomId: 'room', position, currentPrice: new Prisma.Decimal(25), currentBidderId: 'alice',
+    startedAt: now, endsAt: now, maximumEndsAt: now, entries: [{ kind: 'ITEM', catalogId: item }],
+  });
+  const schedulerTx = (overrides: Record<string, unknown> = {}) => ({
+    room: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    round: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    outboxEvent: { create: vi.fn() },
+    ...overrides,
+  });
+  const scheduler = (tx: ReturnType<typeof schedulerTx>) =>
+    new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
+  const enqueued = (tx: ReturnType<typeof schedulerTx>) =>
+    tx.outboxEvent.create.mock.calls.map(([{ data }]) => data.payload as Record<string, unknown>);
+
+  it('activa las salas vencidas, abre su primera ronda y publica la transicion', async () => {
+    const tx = schedulerTx();
+    tx.room.findMany.mockResolvedValue([{ id: 'room' }]);
+    tx.round.findFirst.mockResolvedValue(roundSnapshot('round-1', 1));
+    await expect(scheduler(tx).activateDueRooms(now)).resolves.toEqual({ count: 1 });
     expect(tx.round.updateMany).toHaveBeenCalledWith({
-      where: { roomId: 'room-1', position: 1, status: 'SCHEDULED' },
-      data: { status: 'ACTIVE' },
+      where: { roomId: 'room', position: 1, status: 'SCHEDULED' },
+      data: { status: 'ACTIVE', startedAt: now, endsAt: new Date(now.getTime() + 3 * 60_000), maximumEndsAt: new Date(now.getTime() + 8 * 60_000) },
     });
+    expect(enqueued(tx)).toEqual([expect.objectContaining({ eventType: 'auction.round.activated.v1', roomId: 'room', roundId: 'round-1', position: 1 })]);
   });
   it('no abre rondas cuando otra ejecucion ya activo la sala', async () => {
-    const tx = {
-      room: {
-        findMany: vi.fn().mockResolvedValue([{ id: 'room' }]),
-        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-      },
-      round: { updateMany: vi.fn() },
-    };
-    const service = new RoomsService({ $transaction: (callback: (transaction: typeof tx) => unknown) => callback(tx) } as never, catalog as never);
-    await expect(service.activateDueRooms(new Date())).resolves.toEqual({ count: 0 });
+    const tx = schedulerTx();
+    tx.room.findMany.mockResolvedValue([{ id: 'room' }]);
+    tx.room.updateMany.mockResolvedValue({ count: 0 });
+    await expect(scheduler(tx).activateDueRooms(now)).resolves.toEqual({ count: 0 });
     expect(tx.round.updateMany).not.toHaveBeenCalled();
+    expect(tx.outboxEvent.create).not.toHaveBeenCalled();
+  });
+  it('cierra la ronda vencida y activa la siguiente publicando ambos eventos en orden', async () => {
+    const tx = schedulerTx();
+    tx.round.findMany.mockResolvedValue([roundSnapshot('round-1', 1)]);
+    tx.round.findFirst.mockResolvedValue({ id: 'round-2' });
+    tx.round.findUnique.mockResolvedValue(roundSnapshot('round-2', 2));
+    await scheduler(tx).activateDueRooms(now);
+    expect(enqueued(tx)).toEqual([
+      expect.objectContaining({ eventType: 'auction.round.closed.v1', roundId: 'round-1', currentPrice: '25', currentBidderId: 'alice', closedAt: now.toISOString() }),
+      expect.objectContaining({ eventType: 'auction.round.activated.v1', roundId: 'round-2', position: 2 }),
+    ]);
+  });
+  it('cierra la sala cuando vence su ultima ronda', async () => {
+    const tx = schedulerTx();
+    tx.round.findMany.mockResolvedValue([roundSnapshot('round-1', 1)]);
+    await scheduler(tx).activateDueRooms(now);
+    expect(tx.room.updateMany).toHaveBeenCalledWith({ where: { id: 'room', status: 'ACTIVE' }, data: { status: 'CLOSED' } });
+    expect(enqueued(tx).map((payload) => payload.eventType)).toEqual(['auction.round.closed.v1']);
+  });
+
+  it('entrega el estado vigente con la hora del servidor para resincronizar al reconectar', async () => {
+    const currentRound = { id: 'round-1', position: 1, status: 'ACTIVE', currentPrice: new Prisma.Decimal(25), currentBidderId: 'alice', startedAt: now, endsAt: now, entries: [] };
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [{ id: 'p' }], rounds: [currentRound] });
+    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const state = await service.getCurrentState('room', 'student');
+    expect(state).toMatchObject({ id: 'room', status: 'ACTIVE', currentRound });
+    expect(state.serverTime).toBeInstanceOf(Date);
+  });
+  it('no entrega el estado a quien no fue admitido en la sala', async () => {
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    await expect(service.getCurrentState('room', 'intruso')).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

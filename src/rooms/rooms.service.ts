@@ -229,18 +229,6 @@ export class RoomsService {
         }
       }
 
-      // Recupera rondas que ya estaban activas antes de que existieran los campos de tiempo.
-      const activeRoundsWithoutTiming = await tx.round.findMany({
-        where: { status: RoundStatus.ACTIVE, endsAt: null },
-        select: { id: true },
-      });
-      for (const round of activeRoundsWithoutTiming) {
-        await tx.round.updateMany({
-          where: { id: round.id, status: RoundStatus.ACTIVE, endsAt: null },
-          data: roundTiming(now),
-        });
-      }
-
       const expiredRounds = await tx.round.findMany({
         where: { status: RoundStatus.ACTIVE, endsAt: { lte: now } },
         select: {

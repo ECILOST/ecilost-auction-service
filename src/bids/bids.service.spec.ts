@@ -5,7 +5,7 @@ import { BidsService } from './bids.service.js';
 
 describe('BidsService', () => {
   const activeRound = (amount = 10) => ({ id: 'round', status: RoundStatus.ACTIVE, currentPrice: new Prisma.Decimal(amount) });
-  const placed = (previousBidderId: string | null = 'alice', previousPrice = 10, status = BidStatus.ACCEPTED) => [{ id: 'bid', roundId: 'round', bidderId: 'bob', amount: new Prisma.Decimal(15), sequence: 1n, status, previousBidderId, previousPrice: previousBidderId ? new Prisma.Decimal(previousPrice) : null }];
+  const placed = (previousBidderId: string | null = 'alice', previousPrice = 10, status: BidStatus = BidStatus.ACCEPTED) => [{ id: 'bid', roundId: 'round', bidderId: 'bob', amount: new Prisma.Decimal(15), sequence: 1n, status, previousBidderId, previousPrice: previousBidderId ? new Prisma.Decimal(previousPrice) : null }];
   it('releases the previous leader after accepting a superior bid', async () => {
     const prisma = { round: { findUnique: vi.fn().mockResolvedValue(activeRound()) }, $queryRaw: vi.fn().mockResolvedValue(placed()) };
     const wallet = { hold: vi.fn().mockResolvedValue(true), release: vi.fn().mockResolvedValue(true) };

@@ -65,13 +65,18 @@ class OutboxPublisher implements OnModuleInit, OnModuleDestroy {
             },
           );
           await channel.waitForConfirms();
-          if (unroutedEventIds.delete(event.id)) {
-            throw new Error('RabbitMQ no tiene una cola enlazada para esta clave de enrutamiento.');
-          }
+          // Sin cola enlazada nadie espera el evento: se marca como publicado para no
+          // bloquear el resto del outbox, dejando constancia en lastError.
+          const unrouted = unroutedEventIds.delete(event.id);
+          if (unrouted) this.logger.warn('El evento ' + event.id + ' (' + event.routingKey + ') no tiene consumidores.');
 
           await this.prisma.outboxEvent.update({
             where: { id: event.id },
-            data: { publishedAt: new Date(), attempts: { increment: 1 }, lastError: null },
+            data: {
+              publishedAt: new Date(),
+              attempts: { increment: 1 },
+              lastError: unrouted ? 'Sin cola enlazada para ' + event.routingKey : null,
+            },
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
