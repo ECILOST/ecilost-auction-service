@@ -69,7 +69,11 @@ model Round {
   currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
   currentBidderId String?
   nextBidSequence BigInt      @default(0)
+  startedAt       DateTime?
+  endsAt          DateTime?
+  maximumEndsAt   DateTime?
   @@unique([roomId, position])
+  @@index([status, endsAt])
   @@map("rounds")
 }
 
