@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Immutable image tag to deploy to PROD (sha-<40 character commit SHA>)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npm test --if-present
+      - name: Build
+        run: npm run build
+
+  publish-image:
+    if: github.event_name == 'push' && vars.ACR_NAME != ''
+    needs: node
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Log in to ACR
+        id: acr
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+        run: |
+          az acr login --name "$ACR_NAME"
+          echo "server=$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ steps.acr.outputs.server }}/ecilost-auction-service
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=ref,event=branch
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-dev:
+    if: github.event_name == 'push' && github.ref_name == 'develop' && vars.DEV_CONTAINER_APP_NAME != ''
+    needs: publish-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy immutable image to DEV
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          APP_NAME: ${{ vars.DEV_CONTAINER_APP_NAME }}
+          IMAGE_NAME: ecilost-auction-service
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          SERVER=$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)
+          az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$SERVER/$IMAGE_NAME:$IMAGE_TAG"
+
+  deploy-prod:
+    if: github.event_name == 'workflow_dispatch' && github.ref_name == 'main' && vars.ACR_NAME != '' && vars.PROD_CONTAINER_APP_NAME != ''
+    needs: node
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy selected immutable image to PROD
+        env:
+          ACR_NAME: ${{ vars.ACR_NAME }}
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          APP_NAME: ${{ vars.PROD_CONTAINER_APP_NAME }}
+          IMAGE_NAME: ecilost-auction-service
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          [[ "$IMAGE_TAG" =~ ^sha-[0-9a-f]{40}$ ]] || { echo "Use an immutable sha-<40 character commit SHA> tag"; exit 1; }
+          SERVER=$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)
+          az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$SERVER/$IMAGE_NAME:$IMAGE_TAG"
