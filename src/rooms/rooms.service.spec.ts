@@ -65,22 +65,24 @@ describe('RoomsService', () => {
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', name: 'Sala A', participants: [], rounds: [{ ...round, currentBidderId: null }] });
     const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
     await expect(service.getRoom('room', 'staff')).resolves.toEqual({
-      id: 'room', name: 'Sala A', isParticipant: false, rounds: [{ ...round, hasBids: false, isLeading: false }],
+      id: 'room', name: 'Sala A', isParticipant: false, rounds: [{ ...round, hasBids: false, isLeading: false, myHighestBid: null }],
     });
   });
   it('dice si hay pujas y si quien consulta lidera, sin publicar el id del lider', async () => {
     const rounds = [
-      { id: 'round-1', position: 1, currentBidderId: 'student', entries: [] },
-      { id: 'round-2', position: 2, currentBidderId: 'otro', entries: [] },
+      { id: 'round-1', position: 1, currentBidderId: 'student', entries: [], bids: [{ amount: new Prisma.Decimal(300) }] },
+      { id: 'round-2', position: 2, currentBidderId: 'otro', entries: [], bids: [] },
     ];
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', participants: [{ id: 'p' }], rounds });
     const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
     const room = await service.getRoom('room', 'student');
     expect(room.isParticipant).toBe(true);
-    expect(room.rounds.map(({ hasBids, isLeading }) => ({ hasBids, isLeading }))).toEqual([
-      { hasBids: true, isLeading: true },
-      { hasBids: true, isLeading: false },
+    expect(room.rounds.map(({ hasBids, isLeading, myHighestBid }) => ({ hasBids, isLeading, myHighestBid: myHighestBid?.toString() ?? null }))).toEqual([
+      { hasBids: true, isLeading: true, myHighestBid: '300' },
+      { hasBids: true, isLeading: false, myHighestBid: null },
     ]);
+    // La consulta de pujas se filtra por quien pregunta: nunca trae las de otros.
+    expect(findUnique.mock.calls[0][0].select.rounds.select.bids.where).toEqual({ bidderId: 'student', status: 'ACCEPTED' });
     expect(JSON.stringify(room)).not.toContain('otro');
   });
   it('responde 404 al pedir una sala inexistente', async () => {

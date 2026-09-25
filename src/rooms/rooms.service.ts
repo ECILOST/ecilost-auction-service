@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, RoomStatus, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoomStatus, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
@@ -23,6 +23,13 @@ const roomDetailSelect = (userId: string) => ({
       id: true, position: true, status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
       startedAt: true, endsAt: true, maximumEndsAt: true,
       entries: { select: { kind: true, catalogId: true } },
+      // Solo la mejor puja aceptada de quien consulta: la de los demas no se publica.
+      bids: {
+        where: { bidderId: userId, status: BidStatus.ACCEPTED },
+        orderBy: { amount: 'desc' as const },
+        take: 1,
+        select: { amount: true },
+      },
     },
   },
 });
@@ -32,15 +39,21 @@ const roomDetailSelect = (userId: string) => ({
  * necesita saber si ya hay pujas (para calcular la minima) y si el lider es el, no quien es
  * el otro. La sala la ven tambien quienes no participan.
  */
-function toRoomDetail<T extends { participants: unknown[]; rounds: Array<{ currentBidderId: string | null }> }>(
+function toRoomDetail<T extends {
+  participants: unknown[];
+  rounds: Array<{ currentBidderId: string | null; bids?: Array<{ amount: Prisma.Decimal }> }>;
+}>(
   { participants, rounds, ...room }: T,
   userId: string,
 ) {
   return {
     ...room,
     isParticipant: participants.length > 0,
-    rounds: rounds.map(({ currentBidderId, ...round }) => ({
-      ...round, hasBids: currentBidderId !== null, isLeading: currentBidderId === userId,
+    rounds: rounds.map(({ currentBidderId, bids, ...round }) => ({
+      ...round,
+      hasBids: currentBidderId !== null,
+      isLeading: currentBidderId === userId,
+      myHighestBid: bids?.[0]?.amount ?? null,
     })),
   };
 }
