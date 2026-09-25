@@ -18,4 +18,15 @@ export class CatalogReservationClient {
       return await Promise.race([answer, timeout]);
     } finally { await connection.close(); }
   }
+
+  /** Respaldo de la compensacion cuando el outbox no esta disponible. Sin respuesta: es una orden. */
+  async cancel(payload: { eventId: string; eventType: string }): Promise<void> {
+    const connection = await amqp.connect(this.config.rabbitmqUrl);
+    try {
+      const channel = await connection.createConfirmChannel();
+      await channel.assertExchange('ecilost.events', 'topic', { durable: true });
+      channel.publish('ecilost.events', payload.eventType, Buffer.from(JSON.stringify(payload)), { persistent: true, messageId: payload.eventId });
+      await channel.waitForConfirms();
+    } finally { await connection.close(); }
+  }
 }

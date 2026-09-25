@@ -90,8 +90,54 @@ describe('RoomsService', () => {
     await expect(service.getRoom('room', 'staff')).rejects.toBeInstanceOf(NotFoundException);
   });
   it('convierte la restriccion unica concurrente en conflicto', async () => {
-    const service = new RoomsService({ room: { create: vi.fn().mockRejectedValue({ code: 'P2002' }) } } as never, catalog as never);
+    const outbox = vi.fn();
+    const service = new RoomsService({ room: { create: vi.fn().mockRejectedValue({ code: 'P2002' }) }, outboxEvent: { create: outbox } } as never, catalog as never);
     await expect(service.schedule(valid, 'staff')).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  describe('compensacion de la reserva en catalog', () => {
+    const compensation = (outbox: ReturnType<typeof vi.fn>) => outbox.mock.calls[0][0].data;
+
+    it('si la sala no se guarda despues de reservar, ordena liberar exactamente esas rondas', async () => {
+      const outbox = vi.fn();
+      const reserve = vi.fn().mockResolvedValue(true);
+      const service = new RoomsService({ room: { create: vi.fn().mockRejectedValue({ code: 'P2002' }) }, outboxEvent: { create: outbox } } as never, { reserve } as never);
+
+      await expect(service.schedule(valid, 'staff')).rejects.toBeInstanceOf(ConflictException);
+
+      const reservedRoundId = reserve.mock.calls[0][0][0].roundId;
+      const data = compensation(outbox);
+      expect(data.routingKey).toBe('catalog.round-reservation.cancelled.v1');
+      expect(data.payload.rounds).toEqual([{ roundId: reservedRoundId, entries: [{ kind: 'ITEM', catalogId: item }] }]);
+    });
+
+    it('si catalog no contesta a tiempo, compensa por si alcanzo a reservar', async () => {
+      const outbox = vi.fn();
+      const timeout = new Error('Catalog no respondio a la reserva.');
+      const service = new RoomsService({ room: { create: vi.fn() }, outboxEvent: { create: outbox } } as never, { reserve: vi.fn().mockRejectedValue(timeout) } as never);
+
+      await expect(service.schedule(valid, 'staff')).rejects.toBe(timeout);
+      expect(outbox).toHaveBeenCalledOnce();
+    });
+
+    it('si catalog rechazo la reserva, no hay nada que compensar', async () => {
+      const outbox = vi.fn();
+      const service = new RoomsService({ room: { create: vi.fn() }, outboxEvent: { create: outbox } } as never, { reserve: vi.fn().mockResolvedValue(false) } as never);
+
+      await expect(service.schedule(valid, 'staff')).rejects.toBeInstanceOf(ConflictException);
+      expect(outbox).not.toHaveBeenCalled();
+    });
+
+    it('si la base de auction no acepta la orden, la publica directo a catalog', async () => {
+      const cancel = vi.fn();
+      const service = new RoomsService(
+        { room: { create: vi.fn().mockRejectedValue(new Error('db caida')) }, outboxEvent: { create: vi.fn().mockRejectedValue(new Error('db caida')) } } as never,
+        { reserve: vi.fn().mockResolvedValue(true), cancel } as never,
+      );
+
+      await expect(service.schedule(valid, 'staff')).rejects.toThrow('db caida');
+      expect(cancel).toHaveBeenCalledWith(expect.objectContaining({ eventType: 'catalog.round-reservation.cancelled.v1' }));
+    });
   });
 
   it('admite un estudiante y consume exactamente un cupo', async () => {

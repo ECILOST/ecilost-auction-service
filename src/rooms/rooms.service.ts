@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { BidStatus, Prisma, RoomStatus, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
@@ -123,6 +123,8 @@ async function enqueueRoundEvent(
 
 @Injectable()
 export class RoomsService {
+  private readonly logger = new Logger(RoomsService.name);
+
   constructor(private readonly prisma: PrismaService, private readonly catalog: CatalogReservationClient) {}
 
   /**
@@ -142,7 +144,15 @@ export class RoomsService {
     const rounds = input.rounds.map((round, index) => ({
       id: randomUUID(), position: index + 1, entries: round.entries, startingPrice: new Prisma.Decimal(round.startingPrice),
     }));
-    const reserved = await this.catalog.reserve(rounds.flatMap((round) => round.entries.map((entry) => ({ ...entry, roundId: round.id }))));
+    // Si catalog no contesta a tiempo no se sabe si reservo: se compensa por si acaso. Si
+    // contesto que no, ya deshizo lo suyo en su propia transaccion y no hay nada que liberar.
+    let reserved: boolean;
+    try {
+      reserved = await this.catalog.reserve(rounds.flatMap((round) => round.entries.map((entry) => ({ ...entry, roundId: round.id }))));
+    } catch (error) {
+      await this.compensateReservation(roomId, rounds);
+      throw error;
+    }
     if (!reserved) throw new ConflictException('Uno o mas objetos o lotes ya no estan disponibles.');
     try {
       const room = await this.prisma.room.create({
@@ -164,10 +174,49 @@ export class RoomsService {
       });
       return toRoomDetail(room, scheduledBy);
     } catch (error) {
-      if ((error instanceof Prisma.PrismaClientKnownRequestError || (error as { code?: string }).code === 'P2002') && (error as { code?: string }).code === 'P2002') {
+      // Catalog ya reservo y la sala no existira: sin compensar, esos objetos quedarian
+      // "En subasta" para siempre, reservados por rondas que nadie va a cerrar.
+      await this.compensateReservation(roomId, rounds);
+      if ((error as { code?: string }).code === 'P2002') {
         throw new ConflictException('Un objeto o lote ya pertenece a una sala programada o activa.');
       }
       throw error;
+    }
+  }
+
+  /**
+   * Pide a catalog que suelte lo que reservo para una sala que no llego a existir.
+   *
+   * No es una transaccion distribuida sino una orden compensatoria: va por el outbox, asi
+   * que se reintenta hasta que RabbitMQ la acepte. Catalog la procesa en la misma cola que
+   * la reserva y de a un mensaje, de modo que nunca se adelanta a la reserva que anula, y
+   * solo libera lo que siga reservado por ESTAS rondas: repetirla, o recibirla cuando catalog
+   * habia rechazado la reserva, no cambia nada.
+   *
+   * Si ni siquiera la base de auction acepta la orden, se intenta publicar directo; si eso
+   * tambien falla, queda en el log con lo necesario para liberar a mano.
+   */
+  private async compensateReservation(roomId: string, rounds: Array<{ id: string; entries: Array<{ kind: string; catalogId: string }> }>) {
+    const eventId = randomUUID();
+    const eventType = 'catalog.round-reservation.cancelled.v1';
+    const payload = {
+      eventId,
+      eventType,
+      occurredAt: new Date().toISOString(),
+      roomId,
+      rounds: rounds.map((round) => ({ roundId: round.id, entries: round.entries.map(({ kind, catalogId }) => ({ kind, catalogId })) })),
+    };
+    try {
+      await this.prisma.outboxEvent.create({ data: { id: eventId, eventType, routingKey: eventType, aggregateId: roomId, payload } });
+    } catch (outboxError) {
+      try {
+        await this.catalog.cancel(payload);
+      } catch (publishError) {
+        this.logger.error(
+          `No se pudo pedir a catalog que libere la reserva de la sala ${roomId}; hay que liberarla a mano: ${JSON.stringify(payload.rounds)}`,
+          `${String(outboxError)} / ${String(publishError)}`,
+        );
+      }
     }
   }
 
