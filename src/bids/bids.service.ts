@@ -15,16 +15,30 @@ type PlacedBid = {
   status: BidStatus;
 };
 
+/** Lo minimo que una puja debe superar al precio vigente cuando la ronda ya tiene lider. */
+export const BID_INCREMENT = 100;
+
+/**
+ * La primera puja de la ronda debe alcanzar el precio minimo; las siguientes deben superar
+ * el vigente en al menos BID_INCREMENT. Por encima de eso el estudiante elige el monto.
+ */
+export function minimumBid(round: { startingPrice: Prisma.Decimal; currentPrice: Prisma.Decimal; currentBidderId: string | null }) {
+  return round.currentBidderId ? round.currentPrice.plus(BID_INCREMENT) : round.startingPrice;
+}
+
 @Injectable()
 export class BidsService {
   constructor(private readonly prisma: PrismaService, private readonly wallet: WalletHoldClient) {}
   async place(roundId: string, bidderId: string, amount: number) {
-    if (!Number.isFinite(amount) || amount <= 0) throw new BadRequestException('Bid amount must be positive.');
+    // ECICoin vale lo mismo que el peso colombiano: no hay fracciones.
+    if (!Number.isInteger(amount) || amount <= 0) throw new BadRequestException('Bid amount must be a positive integer.');
     const bidAmount = new Prisma.Decimal(amount);
-    const round = await this.prisma.round.findUnique({ where: { id: roundId }, select: { status: true, currentPrice: true } });
+    const round = await this.prisma.round.findUnique({
+      where: { id: roundId }, select: { status: true, startingPrice: true, currentPrice: true, currentBidderId: true },
+    });
     if (!round) throw new NotFoundException('Round does not exist.');
     if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('Round is not active.');
-    if (bidAmount.lte(round.currentPrice)) throw new ConflictException('Bid must improve the current price.');
+    if (bidAmount.lt(minimumBid(round))) throw new ConflictException(`Bid must be at least ${minimumBid(round).toString()}.`);
     const accepted = await this.wallet.hold(bidderId, `bid:${roundId}:${bidderId}`, amount);
     if (!accepted) throw new ConflictException('Insufficient available ECICoin.');
 
@@ -53,7 +67,11 @@ export class BidsService {
   private async compareAndPlace(roundId: string, bidderId: string, amount: Prisma.Decimal): Promise<PlacedBid | null> {
     const rows = await this.prisma.$queryRaw<PlacedBid[]>(Prisma.sql`
       WITH candidate AS (
-        SELECT id, "roomId", position, "currentBidderId", "currentPrice"
+        -- Misma regla que minimumBid(), evaluada sobre la fila bloqueada: el precio y el
+        -- lider que decide son los vigentes al serializar, no los leidos antes.
+        SELECT id, "roomId", position, "currentBidderId", "currentPrice",
+          CASE WHEN "currentBidderId" IS NULL THEN ${amount} >= "startingPrice"
+               ELSE ${amount} >= "currentPrice" + ${BID_INCREMENT} END AS accepts
         FROM "rounds"
         WHERE id = ${roundId}
           AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
@@ -63,16 +81,16 @@ export class BidsService {
         UPDATE "rounds" AS round
         SET
           "nextBidSequence" = round."nextBidSequence" + 1,
-          "currentPrice" = CASE WHEN candidate."currentPrice" < ${amount} THEN ${amount} ELSE round."currentPrice" END,
-          "currentBidderId" = CASE WHEN candidate."currentPrice" < ${amount} THEN ${bidderId} ELSE round."currentBidderId" END,
-          "endsAt" = CASE WHEN candidate."currentPrice" < ${amount} AND round."endsAt" < round."maximumEndsAt" THEN LEAST(round."endsAt" + INTERVAL '10 seconds', round."maximumEndsAt") ELSE round."endsAt" END
+          "currentPrice" = CASE WHEN candidate.accepts THEN ${amount} ELSE round."currentPrice" END,
+          "currentBidderId" = CASE WHEN candidate.accepts THEN ${bidderId} ELSE round."currentBidderId" END,
+          "endsAt" = CASE WHEN candidate.accepts AND round."endsAt" < round."maximumEndsAt" THEN LEAST(round."endsAt" + INTERVAL '10 seconds', round."maximumEndsAt") ELSE round."endsAt" END
         FROM candidate
         WHERE round.id = candidate.id
-        RETURNING candidate."currentBidderId" AS "previousBidderId", candidate."currentPrice" AS "previousPrice", candidate."roomId" AS "roomId", candidate.position AS position, round."currentPrice" AS "currentPrice", round."currentBidderId" AS "currentBidderId", round."endsAt" AS "endsAt", round."nextBidSequence" AS sequence
+        RETURNING candidate.accepts AS accepts, candidate."currentBidderId" AS "previousBidderId", candidate."currentPrice" AS "previousPrice", candidate."roomId" AS "roomId", candidate.position AS position, round."currentPrice" AS "currentPrice", round."currentBidderId" AS "currentBidderId", round."endsAt" AS "endsAt", round."nextBidSequence" AS sequence
       ), placed_bid AS (
         INSERT INTO "bids" (id, "roundId", "bidderId", amount, sequence, status, "createdAt", "updatedAt")
         SELECT ${randomUUID()}, ${roundId}, ${bidderId}, ${amount}, sequenced.sequence,
-          CASE WHEN sequenced."previousPrice" < ${amount} THEN CAST('ACCEPTED' AS "BidStatus") ELSE CAST('REJECTED' AS "BidStatus") END,
+          CASE WHEN sequenced.accepts THEN CAST('ACCEPTED' AS "BidStatus") ELSE CAST('REJECTED' AS "BidStatus") END,
           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         FROM sequenced
         RETURNING id, "roundId", "bidderId", amount, sequence, status
