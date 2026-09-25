@@ -6,7 +6,14 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from './catalog-reservation.client.js';
 import { WalletHoldClient } from './wallet-hold.client.js';
 
-const OUTBOX_POLL_INTERVAL_MS = 1_000;
+/*
+ * El outbox es el primer tramo del tiempo real: una puja no llega a la sala hasta que este
+ * ciclo la publica. HU-26 pide menos de un segundo de punta a punta, asi que la espera en
+ * el peor caso tiene que ser una fraccion de eso. Un ciclo sin eventos es una consulta
+ * indexada (`publishedAt, occurredAt`) y no abre conexion con RabbitMQ; `publishing`
+ * impide que dos ciclos se solapen si uno tarda mas que el intervalo.
+ */
+const OUTBOX_POLL_INTERVAL_MS = 200;
 const OUTBOX_BATCH_SIZE = 50;
 
 @Injectable()
