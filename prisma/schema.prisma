@@ -33,6 +33,8 @@ enum BidStatus {
 
 model Room {
   id String @id
+  // Nombre con el que el funcionario distingue sus salas y el estudiante las reconoce.
+  name String
   status RoomStatus @default(SCHEDULED)
   maximumCapacity Int
   admittedCount Int @default(0)
@@ -66,6 +68,8 @@ model Round {
   entries         RoundEntry[]
   bids            Bid[]
   status          RoundStatus @default(SCHEDULED)
+  // Precio minimo que fija el funcionario: la primera puja de la ronda debe alcanzarlo.
+  startingPrice   Decimal     @default(0) @db.Decimal(18, 2)
   currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
   currentBidderId String?
   nextBidSequence BigInt      @default(0)

@@ -16,6 +16,17 @@ export class RoomsController {
   @Roles(Role.STAFF)
   schedule(@CurrentUser() principal: Principal, @Body() body: ScheduleRoomDto) { return this.rooms.schedule(body, principal.userId); }
 
+  /** El funcionario administra sus salas; el estudiante las descubre para registrarse. */
+  @Get()
+  @Roles(Role.STAFF, Role.STUDENT)
+  list(@CurrentUser() principal: Principal) { return this.rooms.listRooms(principal.userId); }
+
+  @Get(':roomId')
+  @Roles(Role.STAFF, Role.STUDENT)
+  detail(@CurrentUser() principal: Principal, @Param('roomId', new ParseUUIDPipe({ version: '4' })) roomId: string) {
+    return this.rooms.getRoom(roomId, principal.userId);
+  }
+
   @Get(':roomId/state')
   @Roles(Role.STUDENT)
   currentState(@CurrentUser() principal: Principal, @Param('roomId', new ParseUUIDPipe({ version: '4' })) roomId: string) {

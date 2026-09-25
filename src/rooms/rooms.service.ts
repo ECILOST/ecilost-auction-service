@@ -5,6 +5,32 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
+const ROOM_SUMMARY = {
+  id: true, name: true, status: true, startsAt: true, maximumCapacity: true, admittedCount: true, createdAt: true,
+} as const;
+
+/**
+ * Lo que se publica de una sala con sus rondas. Es un `select` explicito y no un `include`
+ * a proposito: `rounds.nextBidSequence` es BigInt y JSON no sabe serializarlo, asi que un
+ * `include` hacia fallar la respuesta con 500 despues de haber guardado la sala.
+ */
+const roomDetailSelect = (userId: string) => ({
+  ...ROOM_SUMMARY,
+  participants: { where: { userId }, select: { id: true }, take: 1 },
+  rounds: {
+    orderBy: { position: 'asc' as const },
+    select: {
+      id: true, position: true, status: true, startingPrice: true, currentPrice: true,
+      startedAt: true, endsAt: true, maximumEndsAt: true,
+      entries: { select: { kind: true, catalogId: true } },
+    },
+  },
+});
+
+function toRoomDetail<T extends { participants: unknown[] }>({ participants, ...room }: T) {
+  return { ...room, isParticipant: participants.length > 0 };
+}
+
 const ROUND_DURATION_MS = 3 * 60 * 1000;
 const MAX_ROUND_DURATION_MS = 8 * 60 * 1000;
 
@@ -74,26 +100,34 @@ export class RoomsService {
     if (!input.rounds.length || input.rounds.some((round) => !round.entries.length)) {
       throw new BadRequestException('La sala debe tener rondas y cada ronda debe contener al menos un objeto o lote.');
     }
+    if (input.rounds.some((round) => !Number.isInteger(round.startingPrice) || round.startingPrice < 1)) {
+      throw new BadRequestException('Cada ronda debe tener un precio minimo entero mayor que cero.');
+    }
     const roomId = randomUUID();
-    const rounds = input.rounds.map((round, index) => ({ id: randomUUID(), position: index + 1, entries: round.entries }));
+    const rounds = input.rounds.map((round, index) => ({
+      id: randomUUID(), position: index + 1, entries: round.entries, startingPrice: new Prisma.Decimal(round.startingPrice),
+    }));
     const reserved = await this.catalog.reserve(rounds.flatMap((round) => round.entries.map((entry) => ({ ...entry, roundId: round.id }))));
     if (!reserved) throw new ConflictException('Uno o mas objetos o lotes ya no estan disponibles.');
     try {
-      return await this.prisma.room.create({
+      const room = await this.prisma.room.create({
         data: {
           id: roomId,
+          name: input.name,
           maximumCapacity: input.maximumCapacity,
           startsAt: new Date(input.startsAt),
           scheduledBy,
           rounds: {
             create: rounds.map((round) => ({
-              id: round.id, position: round.position,
+              // El precio vigente arranca en el minimo: es lo que ve la sala antes de la primera puja.
+              id: round.id, position: round.position, startingPrice: round.startingPrice, currentPrice: round.startingPrice,
               entries: { create: round.entries.map((entry) => ({ id: randomUUID(), kind: entry.kind, catalogId: entry.catalogId })) },
             })),
           },
         },
-        include: { rounds: { orderBy: { position: 'asc' }, include: { entries: true } } },
+        select: roomDetailSelect(scheduledBy),
       });
+      return toRoomDetail(room);
     } catch (error) {
       if ((error instanceof Prisma.PrismaClientKnownRequestError || (error as { code?: string }).code === 'P2002') && (error as { code?: string }).code === 'P2002') {
         throw new ConflictException('Un objeto o lote ya pertenece a una sala programada o activa.');
@@ -161,6 +195,34 @@ export class RoomsService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Salas para descubrir (estudiante) o administrar (funcionario), de la mas proxima a la
+   * mas lejana. Solo datos de la sala: el contenido de cada ronda lo da `getRoom`.
+   */
+  async listRooms(userId: string) {
+    const rooms = await this.prisma.room.findMany({
+      orderBy: { startsAt: 'asc' },
+      select: {
+        ...ROOM_SUMMARY,
+        participants: { where: { userId }, select: { id: true }, take: 1 },
+        _count: { select: { rounds: true } },
+      },
+    });
+    return rooms.map(({ participants, _count, ...room }) => ({
+      ...room, roundCount: _count.rounds, isParticipant: participants.length > 0,
+    }));
+  }
+
+  /**
+   * Una sala con sus rondas en orden. Las entradas solo traen `kind` y `catalogId`: el
+   * nombre y las fotos son de Catalog, y Auction no guarda copia para no desincronizarse.
+   */
+  async getRoom(roomId: string, userId: string) {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId }, select: roomDetailSelect(userId) });
+    if (!room) throw new NotFoundException('La sala no existe.');
+    return toRoomDetail(room);
   }
 
   async getCurrentState(roomId: string, userId: string) {

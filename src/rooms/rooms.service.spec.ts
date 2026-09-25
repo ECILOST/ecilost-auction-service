@@ -5,12 +5,12 @@ import { RoomsService } from './rooms.service.js';
 import { AuctionableKindDto } from './dto/schedule-room.dto.js';
 
 const item = '11111111-1111-4111-8111-111111111111';
-const valid = { maximumCapacity: 30, startsAt: '2030-01-01T10:00:00.000Z', rounds: [{ entries: [{ kind: AuctionableKindDto.ITEM, catalogId: item }] }] };
+const valid = { name: 'Sala de prueba', maximumCapacity: 30, startsAt: '2030-01-01T10:00:00.000Z', rounds: [{ entries: [{ kind: AuctionableKindDto.ITEM, catalogId: item }], startingPrice: 50000 }] };
 const catalog = { reserve: vi.fn().mockResolvedValue(true) };
 
 describe('RoomsService', () => {
   it('crea una sala SCHEDULED con rondas encadenadas', async () => {
-    const create = vi.fn().mockResolvedValue({ id: 'room', status: 'SCHEDULED', rounds: [] });
+    const create = vi.fn().mockResolvedValue({ id: 'room', status: 'SCHEDULED', participants: [], rounds: [] });
     const service = new RoomsService({ room: { create } } as never, catalog as never);
     await expect(service.schedule(valid, 'staff')).resolves.toMatchObject({ status: 'SCHEDULED' });
     expect(create).toHaveBeenCalledOnce();
@@ -22,7 +22,53 @@ describe('RoomsService', () => {
   it('rechaza una sala sin rondas o una ronda vacia', async () => {
     const service = new RoomsService({ room: { create: vi.fn() } } as never, catalog as never);
     await expect(service.schedule({ ...valid, rounds: [] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
-    await expect(service.schedule({ ...valid, rounds: [{ entries: [] }] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.schedule({ ...valid, rounds: [{ entries: [], startingPrice: 50000 }] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
+  });
+  it('guarda el nombre y arranca cada ronda con su precio minimo como precio vigente', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [] });
+    const service = new RoomsService({ room: { create } } as never, catalog as never);
+    await service.schedule(valid, 'staff');
+    const { data } = create.mock.calls[0][0];
+    expect(data.name).toBe('Sala de prueba');
+    expect(data.rounds.create[0].startingPrice.toString()).toBe('50000');
+    expect(data.rounds.create[0].currentPrice.toString()).toBe('50000');
+  });
+  it('responde la sala sin columnas BigInt, que JSON no sabe serializar', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { create } } as never, catalog as never);
+    const room = await service.schedule(valid, 'staff');
+    expect(() => JSON.stringify(room)).not.toThrow();
+    expect(create.mock.calls[0][0].select.rounds.select).not.toHaveProperty('nextBidSequence');
+    expect(create.mock.calls[0][0]).not.toHaveProperty('include');
+  });
+  it.each([0, -100, 1500.5])('rechaza el precio minimo %s sin reservar en Catalog', async (startingPrice) => {
+    const reserve = vi.fn();
+    const service = new RoomsService({ room: { create: vi.fn() } } as never, { reserve } as never);
+    await expect(service.schedule({ ...valid, rounds: [{ ...valid.rounds[0], startingPrice }] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
+    expect(reserve).not.toHaveBeenCalled();
+  });
+
+  it('lista las salas indicando si quien consulta ya esta registrado', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      { id: 'a', name: 'Sala A', participants: [{ id: 'p' }], _count: { rounds: 3 } },
+      { id: 'b', name: 'Sala B', participants: [], _count: { rounds: 1 } },
+    ]);
+    const service = new RoomsService({ room: { findMany } } as never, catalog as never);
+    await expect(service.listRooms('student')).resolves.toEqual([
+      { id: 'a', name: 'Sala A', roundCount: 3, isParticipant: true },
+      { id: 'b', name: 'Sala B', roundCount: 1, isParticipant: false },
+    ]);
+    expect(findMany.mock.calls[0][0].orderBy).toEqual({ startsAt: 'asc' });
+  });
+  it('entrega el detalle de la sala con sus rondas', async () => {
+    const rounds = [{ id: 'round-1', position: 1, startingPrice: new Prisma.Decimal(50000), entries: [{ kind: 'ITEM', catalogId: item }] }];
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', name: 'Sala A', participants: [], rounds });
+    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    await expect(service.getRoom('room', 'staff')).resolves.toEqual({ id: 'room', name: 'Sala A', rounds, isParticipant: false });
+  });
+  it('responde 404 al pedir una sala inexistente', async () => {
+    const service = new RoomsService({ room: { findUnique: vi.fn().mockResolvedValue(null) } } as never, catalog as never);
+    await expect(service.getRoom('room', 'staff')).rejects.toBeInstanceOf(NotFoundException);
   });
   it('convierte la restriccion unica concurrente en conflicto', async () => {
     const service = new RoomsService({ room: { create: vi.fn().mockRejectedValue({ code: 'P2002' }) } } as never, catalog as never);

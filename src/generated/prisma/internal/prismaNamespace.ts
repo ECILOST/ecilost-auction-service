@@ -907,6 +907,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const RoomScalarFieldEnum = {
   id: 'id',
+  name: 'name',
   status: 'status',
   maximumCapacity: 'maximumCapacity',
   admittedCount: 'admittedCount',
@@ -933,6 +934,7 @@ export const RoundScalarFieldEnum = {
   roomId: 'roomId',
   position: 'position',
   status: 'status',
+  startingPrice: 'startingPrice',
   currentPrice: 'currentPrice',
   currentBidderId: 'currentBidderId',
   nextBidSequence: 'nextBidSequence',
