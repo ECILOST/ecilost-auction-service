@@ -25,7 +25,7 @@ describe('RoomsService', () => {
     await expect(service.schedule({ ...valid, rounds: [{ entries: [], startingPrice: 50000 }] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
   });
   it('guarda el nombre y arranca cada ronda con su precio minimo como precio vigente', async () => {
-    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [] });
+    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
     const service = new RoomsService({ room: { create } } as never, catalog as never);
     await service.schedule(valid, 'staff');
     const { data } = create.mock.calls[0][0];
@@ -61,10 +61,27 @@ describe('RoomsService', () => {
     expect(findMany.mock.calls[0][0].orderBy).toEqual({ startsAt: 'asc' });
   });
   it('entrega el detalle de la sala con sus rondas', async () => {
-    const rounds = [{ id: 'round-1', position: 1, startingPrice: new Prisma.Decimal(50000), entries: [{ kind: 'ITEM', catalogId: item }] }];
-    const findUnique = vi.fn().mockResolvedValue({ id: 'room', name: 'Sala A', participants: [], rounds });
+    const round = { id: 'round-1', position: 1, startingPrice: new Prisma.Decimal(50000), entries: [{ kind: 'ITEM', catalogId: item }] };
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', name: 'Sala A', participants: [], rounds: [{ ...round, currentBidderId: null }] });
     const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
-    await expect(service.getRoom('room', 'staff')).resolves.toEqual({ id: 'room', name: 'Sala A', rounds, isParticipant: false });
+    await expect(service.getRoom('room', 'staff')).resolves.toEqual({
+      id: 'room', name: 'Sala A', isParticipant: false, rounds: [{ ...round, hasBids: false, isLeading: false }],
+    });
+  });
+  it('dice si hay pujas y si quien consulta lidera, sin publicar el id del lider', async () => {
+    const rounds = [
+      { id: 'round-1', position: 1, currentBidderId: 'student', entries: [] },
+      { id: 'round-2', position: 2, currentBidderId: 'otro', entries: [] },
+    ];
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', participants: [{ id: 'p' }], rounds });
+    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const room = await service.getRoom('room', 'student');
+    expect(room.isParticipant).toBe(true);
+    expect(room.rounds.map(({ hasBids, isLeading }) => ({ hasBids, isLeading }))).toEqual([
+      { hasBids: true, isLeading: true },
+      { hasBids: true, isLeading: false },
+    ]);
+    expect(JSON.stringify(room)).not.toContain('otro');
   });
   it('responde 404 al pedir una sala inexistente', async () => {
     const service = new RoomsService({ room: { findUnique: vi.fn().mockResolvedValue(null) } } as never, catalog as never);

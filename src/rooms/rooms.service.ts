@@ -20,15 +20,29 @@ const roomDetailSelect = (userId: string) => ({
   rounds: {
     orderBy: { position: 'asc' as const },
     select: {
-      id: true, position: true, status: true, startingPrice: true, currentPrice: true,
+      id: true, position: true, status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
       startedAt: true, endsAt: true, maximumEndsAt: true,
       entries: { select: { kind: true, catalogId: true } },
     },
   },
 });
 
-function toRoomDetail<T extends { participants: unknown[] }>({ participants, ...room }: T) {
-  return { ...room, isParticipant: participants.length > 0 };
+/**
+ * El lider de cada ronda se publica como dos banderas y no como su userId: quien consulta
+ * necesita saber si ya hay pujas (para calcular la minima) y si el lider es el, no quien es
+ * el otro. La sala la ven tambien quienes no participan.
+ */
+function toRoomDetail<T extends { participants: unknown[]; rounds: Array<{ currentBidderId: string | null }> }>(
+  { participants, rounds, ...room }: T,
+  userId: string,
+) {
+  return {
+    ...room,
+    isParticipant: participants.length > 0,
+    rounds: rounds.map(({ currentBidderId, ...round }) => ({
+      ...round, hasBids: currentBidderId !== null, isLeading: currentBidderId === userId,
+    })),
+  };
 }
 
 const ROUND_DURATION_MS = 3 * 60 * 1000;
@@ -127,7 +141,7 @@ export class RoomsService {
         },
         select: roomDetailSelect(scheduledBy),
       });
-      return toRoomDetail(room);
+      return toRoomDetail(room, scheduledBy);
     } catch (error) {
       if ((error instanceof Prisma.PrismaClientKnownRequestError || (error as { code?: string }).code === 'P2002') && (error as { code?: string }).code === 'P2002') {
         throw new ConflictException('Un objeto o lote ya pertenece a una sala programada o activa.');
@@ -222,7 +236,7 @@ export class RoomsService {
   async getRoom(roomId: string, userId: string) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId }, select: roomDetailSelect(userId) });
     if (!room) throw new NotFoundException('La sala no existe.');
-    return toRoomDetail(room);
+    return toRoomDetail(room, userId);
   }
 
   async getCurrentState(roomId: string, userId: string) {
