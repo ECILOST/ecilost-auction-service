@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { BidStatus, Prisma, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletHoldClient } from '../events/wallet-hold.client.js';
@@ -31,32 +31,39 @@ export class BidsService {
   constructor(private readonly prisma: PrismaService, private readonly wallet: WalletHoldClient) {}
   async place(roundId: string, bidderId: string, amount: number) {
     // ECICoin vale lo mismo que el peso colombiano: no hay fracciones.
-    if (!Number.isInteger(amount) || amount <= 0) throw new BadRequestException('Bid amount must be a positive integer.');
+    if (!Number.isInteger(amount) || amount <= 0) throw new BadRequestException('La puja debe ser un numero entero positivo.');
     const bidAmount = new Prisma.Decimal(amount);
     const round = await this.prisma.round.findUnique({
-      where: { id: roundId }, select: { status: true, startingPrice: true, currentPrice: true, currentBidderId: true },
+      where: { id: roundId },
+      select: {
+        status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
+        room: { select: { participants: { where: { userId: bidderId }, select: { id: true }, take: 1 } } },
+      },
     });
-    if (!round) throw new NotFoundException('Round does not exist.');
-    if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('Round is not active.');
-    if (bidAmount.lt(minimumBid(round))) throw new ConflictException(`Bid must be at least ${minimumBid(round).toString()}.`);
+    if (!round) throw new NotFoundException('La ronda no existe.');
+    // HU-17: solo puja quien se registro antes del inicio. Se comprueba antes de reservar.
+    if (round.room.participants.length === 0) throw new ForbiddenException('Debes estar admitido en la sala para pujar.');
+    if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('La ronda no esta activa.');
+    if (bidAmount.lt(minimumBid(round))) throw new ConflictException(`La puja debe ser de al menos ${minimumBid(round).toString()} ECICoin.`);
     const accepted = await this.wallet.hold(bidderId, `bid:${roundId}:${bidderId}`, amount);
-    if (!accepted) throw new ConflictException('Insufficient available ECICoin.');
+    if (!accepted) throw new ConflictException('No tienes ECICoin disponibles suficientes para esta puja.');
 
     const placed = await this.compareAndPlace(roundId, bidderId, bidAmount);
     if (!placed) {
       await this.wallet.release(bidderId, `bid:${roundId}:${bidderId}`, amount);
-      throw new ConflictException('Round is not active.');
+      throw new ConflictException('La ronda no esta activa.');
     }
     if (placed.status === BidStatus.REJECTED) {
       // El intento se conserva en el historial, pero la reserva previa se revierte.
       await this.wallet.release(bidderId, `bid:${roundId}:${bidderId}`, amount);
-      throw new ConflictException('Bid must improve the current price.');
+      throw new ConflictException('Otra puja llego primero: la tuya ya no alcanza el minimo. Se libero tu reserva.');
     }
     if (placed.previousBidderId && placed.previousBidderId !== bidderId && placed.previousPrice) {
       const released = await this.wallet.release(placed.previousBidderId, `bid:${roundId}:${placed.previousBidderId}`, Number(placed.previousPrice));
-      if (!released) throw new ConflictException('The previous bid could not be released.');
+      if (!released) throw new ConflictException('No fue posible liberar la puja anterior.');
     }
-    return { id: placed.id, roundId: placed.roundId, bidderId: placed.bidderId, amount: placed.amount, sequence: placed.sequence };
+    // La secuencia es BigInt y JSON no sabe serializarla: viaja como texto, como en el evento del outbox.
+    return { id: placed.id, roundId: placed.roundId, bidderId: placed.bidderId, amount: placed.amount, sequence: placed.sequence.toString() };
   }
 
   /**

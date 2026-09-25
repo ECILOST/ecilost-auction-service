@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { BidStatus, Prisma, RoundStatus } from '../generated/prisma/client.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BidsService, minimumBid } from './bids.service.js';
@@ -6,13 +6,16 @@ import { BidsService, minimumBid } from './bids.service.js';
 describe('BidsService', () => {
   const activeRound = (currentPrice = 1000, currentBidderId: string | null = 'alice', startingPrice = 500) => ({
     id: 'round', status: RoundStatus.ACTIVE, startingPrice: new Prisma.Decimal(startingPrice), currentPrice: new Prisma.Decimal(currentPrice), currentBidderId,
+    room: { participants: [{ id: 'participant' }] },
   });
   const placed = (previousBidderId: string | null = 'alice', previousPrice = 1000, status: BidStatus = BidStatus.ACCEPTED) => [{ id: 'bid', roundId: 'round', bidderId: 'bob', amount: new Prisma.Decimal(1100), sequence: 1n, status, previousBidderId, previousPrice: previousBidderId ? new Prisma.Decimal(previousPrice) : null }];
   it('releases the previous leader after accepting a superior bid', async () => {
     const prisma = { round: { findUnique: vi.fn().mockResolvedValue(activeRound()) }, $queryRaw: vi.fn().mockResolvedValue(placed()) };
     const wallet = { hold: vi.fn().mockResolvedValue(true), release: vi.fn().mockResolvedValue(true) };
     const service = new BidsService(prisma as never, wallet as never);
-    await expect(service.place('round', 'bob', 1100)).resolves.toMatchObject({ id: 'bid', roundId: 'round', bidderId: 'bob', sequence: 1n });
+    const result = await service.place('round', 'bob', 1100);
+    expect(result).toMatchObject({ id: 'bid', roundId: 'round', bidderId: 'bob', sequence: '1' });
+    expect(() => JSON.stringify(result)).not.toThrow();
     expect(wallet.hold).toHaveBeenCalledWith('bob', 'bid:round:bob', 1100);
     expect(wallet.release).toHaveBeenCalledWith('alice', 'bid:round:alice', 1000);
   });
@@ -67,8 +70,16 @@ describe('BidsService', () => {
     const prisma = { round: { findUnique: vi.fn().mockResolvedValue({ ...activeRound(), status: RoundStatus.SCHEDULED }) }, $queryRaw: vi.fn() };
     const wallet = { hold: vi.fn(), release: vi.fn() };
     const service = new BidsService(prisma as never, wallet as never);
-    await expect(service.place('round', 'bob', 1100)).rejects.toThrow('Round is not active.');
+    await expect(service.place('round', 'bob', 1100)).rejects.toThrow('La ronda no esta activa.');
     expect(wallet.hold).not.toHaveBeenCalled();
+  });
+  it('rejects a student who was not admitted before the room started, without reserving funds', async () => {
+    const prisma = { round: { findUnique: vi.fn().mockResolvedValue({ ...activeRound(), room: { participants: [] } }) }, $queryRaw: vi.fn() };
+    const wallet = { hold: vi.fn(), release: vi.fn() };
+    const service = new BidsService(prisma as never, wallet as never);
+    await expect(service.place('round', 'intruso', 1100)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(wallet.hold).not.toHaveBeenCalled();
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 });
 

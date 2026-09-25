@@ -15,7 +15,7 @@ export class WalletHoldClient {
     const connection = await amqp.connect(this.config.rabbitmqUrl); try { const ch = await connection.createChannel(); const reply = await ch.assertQueue('', { exclusive: true }); const id = randomUUID();
       const response = new Promise<boolean>((resolve) => ch.consume(reply.queue, (m) => { if (m?.properties.correlationId === id) resolve(JSON.parse(m.content.toString()).accepted === true); }, { noAck: true }));
       ch.publish('ecilost.events', routingKey, Buffer.from(JSON.stringify(body)), { correlationId: id, replyTo: reply.queue, persistent: true });
-      return await Promise.race([response, new Promise<boolean>((_, reject) => setTimeout(() => reject(new ServiceUnavailableException('Wallet did not respond')), 5000))]);
+      return await Promise.race([response, new Promise<boolean>((_, reject) => setTimeout(() => reject(new ServiceUnavailableException('La billetera no respondio.')), 5000))]);
     } finally { await connection.close(); }
   }
 }
