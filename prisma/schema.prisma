@@ -26,6 +26,12 @@ enum RoundStatus {
   CLOSED
 }
 
+// Resultado de una ronda cerrada (HU-28): adjudicada a quien lideraba, o desierta.
+enum RoundResult {
+  AWARDED
+  DESERTED
+}
+
 enum BidStatus {
   ACCEPTED
   REJECTED
@@ -76,6 +82,10 @@ model Round {
   startedAt       DateTime?
   endsAt          DateTime?
   maximumEndsAt   DateTime?
+  // Se fijan una sola vez al cerrar: el lider en ese instante es el ganador (HU-28).
+  result          RoundResult?
+  winnerId        String?
+  closedAt        DateTime?
   @@unique([roomId, position])
   @@index([status, endsAt])
   @@map("rounds")

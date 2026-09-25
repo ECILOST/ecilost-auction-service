@@ -110,7 +110,10 @@ export const RoundScalarFieldEnum = {
   nextBidSequence: 'nextBidSequence',
   startedAt: 'startedAt',
   endsAt: 'endsAt',
-  maximumEndsAt: 'maximumEndsAt'
+  maximumEndsAt: 'maximumEndsAt',
+  result: 'result',
+  winnerId: 'winnerId',
+  closedAt: 'closedAt'
 } as const
 
 export type RoundScalarFieldEnum = (typeof RoundScalarFieldEnum)[keyof typeof RoundScalarFieldEnum]

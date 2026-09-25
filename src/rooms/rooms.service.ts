@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { BidStatus, Prisma, RoomStatus, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoomStatus, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
@@ -21,7 +21,7 @@ const roomDetailSelect = (userId: string) => ({
     orderBy: { position: 'asc' as const },
     select: {
       id: true, position: true, status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
-      startedAt: true, endsAt: true, maximumEndsAt: true,
+      startedAt: true, endsAt: true, maximumEndsAt: true, result: true, closedAt: true,
       entries: { select: { kind: true, catalogId: true } },
       // Solo la mejor puja aceptada de quien consulta: la de los demas no se publica.
       bids: {
@@ -85,7 +85,7 @@ async function enqueueRoundEvent(
   tx: Prisma.TransactionClient,
   eventType: 'auction.round.activated.v1' | 'auction.round.closed.v1',
   round: RoundEventSnapshot,
-  closedAt?: Date,
+  closing?: { closedAt: Date; result: RoundResult; winnerId: string | null },
 ) {
   const eventId = randomUUID();
   await tx.outboxEvent.create({
@@ -107,7 +107,15 @@ async function enqueueRoundEvent(
         endsAt: round.endsAt?.toISOString() ?? null,
         maximumEndsAt: round.maximumEndsAt?.toISOString() ?? null,
         entries: round.entries.map((entry) => ({ kind: entry.kind, catalogId: entry.catalogId })),
-        ...(closedAt ? { closedAt: closedAt.toISOString() } : {}),
+        // Wallet cobra y libera, y catalog vende o devuelve, a partir de estos tres campos.
+        ...(closing
+          ? {
+              closedAt: closing.closedAt.toISOString(),
+              result: closing.result,
+              winnerId: closing.winnerId,
+              winningAmount: closing.winnerId ? round.currentPrice.toString() : null,
+            }
+          : {}),
       },
     },
   });
@@ -327,13 +335,16 @@ export class RoomsService {
         },
       });
       for (const round of expiredRounds) {
+        // El lider leido aqui es definitivo: una puja solo entra con `endsAt` futuro, y esta
+        // ronda ya vencio en `now`, asi que nadie puede cambiarlo entre la lectura y el cierre.
+        const result = round.currentBidderId ? RoundResult.AWARDED : RoundResult.DESERTED;
         const closed = await tx.round.updateMany({
           where: { id: round.id, status: RoundStatus.ACTIVE, endsAt: { lte: now } },
-          data: { status: RoundStatus.CLOSED },
+          data: { status: RoundStatus.CLOSED, result, winnerId: round.currentBidderId, closedAt: now },
         });
         if (closed.count !== 1) continue;
 
-        await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, now);
+        await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, { closedAt: now, result, winnerId: round.currentBidderId });
 
         const nextRound = await tx.round.findFirst({
           where: { roomId: round.roomId, position: { gt: round.position }, status: RoundStatus.SCHEDULED },

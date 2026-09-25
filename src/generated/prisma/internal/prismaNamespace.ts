@@ -940,7 +940,10 @@ export const RoundScalarFieldEnum = {
   nextBidSequence: 'nextBidSequence',
   startedAt: 'startedAt',
   endsAt: 'endsAt',
-  maximumEndsAt: 'maximumEndsAt'
+  maximumEndsAt: 'maximumEndsAt',
+  result: 'result',
+  winnerId: 'winnerId',
+  closedAt: 'closedAt'
 } as const
 
 export type RoundScalarFieldEnum = (typeof RoundScalarFieldEnum)[keyof typeof RoundScalarFieldEnum]
@@ -1127,6 +1130,20 @@ export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
  * Reference to a field of type 'BigInt[]'
  */
 export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RoundResult'
+ */
+export type EnumRoundResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoundResult'>
+    
+
+
+/**
+ * Reference to a field of type 'RoundResult[]'
+ */
+export type ListEnumRoundResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoundResult[]'>
     
 
 

@@ -52,6 +52,9 @@ export type RoundMinAggregateOutputType = {
   startedAt: Date | null
   endsAt: Date | null
   maximumEndsAt: Date | null
+  result: $Enums.RoundResult | null
+  winnerId: string | null
+  closedAt: Date | null
 }
 
 export type RoundMaxAggregateOutputType = {
@@ -66,6 +69,9 @@ export type RoundMaxAggregateOutputType = {
   startedAt: Date | null
   endsAt: Date | null
   maximumEndsAt: Date | null
+  result: $Enums.RoundResult | null
+  winnerId: string | null
+  closedAt: Date | null
 }
 
 export type RoundCountAggregateOutputType = {
@@ -80,6 +86,9 @@ export type RoundCountAggregateOutputType = {
   startedAt: number
   endsAt: number
   maximumEndsAt: number
+  result: number
+  winnerId: number
+  closedAt: number
   _all: number
 }
 
@@ -110,6 +119,9 @@ export type RoundMinAggregateInputType = {
   startedAt?: true
   endsAt?: true
   maximumEndsAt?: true
+  result?: true
+  winnerId?: true
+  closedAt?: true
 }
 
 export type RoundMaxAggregateInputType = {
@@ -124,6 +136,9 @@ export type RoundMaxAggregateInputType = {
   startedAt?: true
   endsAt?: true
   maximumEndsAt?: true
+  result?: true
+  winnerId?: true
+  closedAt?: true
 }
 
 export type RoundCountAggregateInputType = {
@@ -138,6 +153,9 @@ export type RoundCountAggregateInputType = {
   startedAt?: true
   endsAt?: true
   maximumEndsAt?: true
+  result?: true
+  winnerId?: true
+  closedAt?: true
   _all?: true
 }
 
@@ -239,6 +257,9 @@ export type RoundGroupByOutputType = {
   startedAt: Date | null
   endsAt: Date | null
   maximumEndsAt: Date | null
+  result: $Enums.RoundResult | null
+  winnerId: string | null
+  closedAt: Date | null
   _count: RoundCountAggregateOutputType | null
   _avg: RoundAvgAggregateOutputType | null
   _sum: RoundSumAggregateOutputType | null
@@ -276,6 +297,9 @@ export type RoundWhereInput = {
   startedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
+  result?: Prisma.EnumRoundResultNullableFilter<"Round"> | $Enums.RoundResult | null
+  winnerId?: Prisma.StringNullableFilter<"Round"> | string | null
+  closedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   room?: Prisma.XOR<Prisma.RoomScalarRelationFilter, Prisma.RoomWhereInput>
   entries?: Prisma.RoundEntryListRelationFilter
   bids?: Prisma.BidListRelationFilter
@@ -293,6 +317,9 @@ export type RoundOrderByWithRelationInput = {
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  result?: Prisma.SortOrderInput | Prisma.SortOrder
+  winnerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  closedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   room?: Prisma.RoomOrderByWithRelationInput
   entries?: Prisma.RoundEntryOrderByRelationAggregateInput
   bids?: Prisma.BidOrderByRelationAggregateInput
@@ -314,6 +341,9 @@ export type RoundWhereUniqueInput = Prisma.AtLeast<{
   startedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
+  result?: Prisma.EnumRoundResultNullableFilter<"Round"> | $Enums.RoundResult | null
+  winnerId?: Prisma.StringNullableFilter<"Round"> | string | null
+  closedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   room?: Prisma.XOR<Prisma.RoomScalarRelationFilter, Prisma.RoomWhereInput>
   entries?: Prisma.RoundEntryListRelationFilter
   bids?: Prisma.BidListRelationFilter
@@ -331,6 +361,9 @@ export type RoundOrderByWithAggregationInput = {
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  result?: Prisma.SortOrderInput | Prisma.SortOrder
+  winnerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  closedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.RoundCountOrderByAggregateInput
   _avg?: Prisma.RoundAvgOrderByAggregateInput
   _max?: Prisma.RoundMaxOrderByAggregateInput
@@ -353,6 +386,9 @@ export type RoundScalarWhereWithAggregatesInput = {
   startedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
+  result?: Prisma.EnumRoundResultNullableWithAggregatesFilter<"Round"> | $Enums.RoundResult | null
+  winnerId?: Prisma.StringNullableWithAggregatesFilter<"Round"> | string | null
+  closedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
 }
 
 export type RoundCreateInput = {
@@ -366,6 +402,9 @@ export type RoundCreateInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
@@ -383,6 +422,9 @@ export type RoundUncheckedCreateInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
 }
@@ -398,6 +440,9 @@ export type RoundUpdateInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
@@ -415,6 +460,9 @@ export type RoundUncheckedUpdateInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
@@ -431,6 +479,9 @@ export type RoundCreateManyInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
 }
 
 export type RoundUpdateManyMutationInput = {
@@ -444,6 +495,9 @@ export type RoundUpdateManyMutationInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type RoundUncheckedUpdateManyInput = {
@@ -458,6 +512,9 @@ export type RoundUncheckedUpdateManyInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type RoundListRelationFilter = {
@@ -487,6 +544,9 @@ export type RoundCountOrderByAggregateInput = {
   startedAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrder
+  result?: Prisma.SortOrder
+  winnerId?: Prisma.SortOrder
+  closedAt?: Prisma.SortOrder
 }
 
 export type RoundAvgOrderByAggregateInput = {
@@ -508,6 +568,9 @@ export type RoundMaxOrderByAggregateInput = {
   startedAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrder
+  result?: Prisma.SortOrder
+  winnerId?: Prisma.SortOrder
+  closedAt?: Prisma.SortOrder
 }
 
 export type RoundMinOrderByAggregateInput = {
@@ -522,6 +585,9 @@ export type RoundMinOrderByAggregateInput = {
   startedAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrder
+  result?: Prisma.SortOrder
+  winnerId?: Prisma.SortOrder
+  closedAt?: Prisma.SortOrder
 }
 
 export type RoundSumOrderByAggregateInput = {
@@ -606,6 +672,10 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
+export type NullableEnumRoundResultFieldUpdateOperationsInput = {
+  set?: $Enums.RoundResult | null
+}
+
 export type RoundCreateNestedOneWithoutBidsInput = {
   create?: Prisma.XOR<Prisma.RoundCreateWithoutBidsInput, Prisma.RoundUncheckedCreateWithoutBidsInput>
   connectOrCreate?: Prisma.RoundCreateOrConnectWithoutBidsInput
@@ -645,6 +715,9 @@ export type RoundCreateWithoutRoomInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
 }
@@ -660,6 +733,9 @@ export type RoundUncheckedCreateWithoutRoomInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
 }
@@ -705,6 +781,9 @@ export type RoundScalarWhereInput = {
   startedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
+  result?: Prisma.EnumRoundResultNullableFilter<"Round"> | $Enums.RoundResult | null
+  winnerId?: Prisma.StringNullableFilter<"Round"> | string | null
+  closedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
 }
 
 export type RoundCreateWithoutBidsInput = {
@@ -718,6 +797,9 @@ export type RoundCreateWithoutBidsInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
 }
@@ -734,6 +816,9 @@ export type RoundUncheckedCreateWithoutBidsInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
 }
 
@@ -764,6 +849,9 @@ export type RoundUpdateWithoutBidsInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
 }
@@ -780,6 +868,9 @@ export type RoundUncheckedUpdateWithoutBidsInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
 }
 
@@ -794,6 +885,9 @@ export type RoundCreateWithoutEntriesInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
 }
@@ -810,6 +904,9 @@ export type RoundUncheckedCreateWithoutEntriesInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
 }
 
@@ -840,6 +937,9 @@ export type RoundUpdateWithoutEntriesInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
 }
@@ -856,6 +956,9 @@ export type RoundUncheckedUpdateWithoutEntriesInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
@@ -870,6 +973,9 @@ export type RoundCreateManyRoomInput = {
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
 }
 
 export type RoundUpdateWithoutRoomInput = {
@@ -883,6 +989,9 @@ export type RoundUpdateWithoutRoomInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
 }
@@ -898,6 +1007,9 @@ export type RoundUncheckedUpdateWithoutRoomInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
@@ -913,6 +1025,9 @@ export type RoundUncheckedUpdateManyWithoutRoomInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 
@@ -967,6 +1082,9 @@ export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
+  result?: boolean
+  winnerId?: boolean
+  closedAt?: boolean
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
   bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
@@ -985,6 +1103,9 @@ export type RoundSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
+  result?: boolean
+  winnerId?: boolean
+  closedAt?: boolean
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -1000,6 +1121,9 @@ export type RoundSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
+  result?: boolean
+  winnerId?: boolean
+  closedAt?: boolean
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -1015,9 +1139,12 @@ export type RoundSelectScalar = {
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
+  result?: boolean
+  winnerId?: boolean
+  closedAt?: boolean
 }
 
-export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status" | "startingPrice" | "currentPrice" | "currentBidderId" | "nextBidSequence" | "startedAt" | "endsAt" | "maximumEndsAt", ExtArgs["result"]["round"]>
+export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status" | "startingPrice" | "currentPrice" | "currentBidderId" | "nextBidSequence" | "startedAt" | "endsAt" | "maximumEndsAt" | "result" | "winnerId" | "closedAt", ExtArgs["result"]["round"]>
 export type RoundInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
@@ -1050,6 +1177,9 @@ export type $RoundPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     startedAt: Date | null
     endsAt: Date | null
     maximumEndsAt: Date | null
+    result: $Enums.RoundResult | null
+    winnerId: string | null
+    closedAt: Date | null
   }, ExtArgs["result"]["round"]>
   composites: {}
 }
@@ -1487,6 +1617,9 @@ export interface RoundFieldRefs {
   readonly startedAt: Prisma.FieldRef<"Round", 'DateTime'>
   readonly endsAt: Prisma.FieldRef<"Round", 'DateTime'>
   readonly maximumEndsAt: Prisma.FieldRef<"Round", 'DateTime'>
+  readonly result: Prisma.FieldRef<"Round", 'RoundResult'>
+  readonly winnerId: Prisma.FieldRef<"Round", 'String'>
+  readonly closedAt: Prisma.FieldRef<"Round", 'DateTime'>
 }
     
 

@@ -171,6 +171,13 @@ export type DateTimeNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
 }
 
+export type EnumRoundResultNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoundResult | Prisma.EnumRoundResultFieldRefInput<$PrismaModel> | null
+  in?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumRoundResultNullableFilter<$PrismaModel> | $Enums.RoundResult | null
+}
+
 export type SortOrderInput = {
   sort: Prisma.SortOrder
   nulls?: Prisma.NullsOrder
@@ -248,6 +255,16 @@ export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
+}
+
+export type EnumRoundResultNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoundResult | Prisma.EnumRoundResultFieldRefInput<$PrismaModel> | null
+  in?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumRoundResultNullableWithAggregatesFilter<$PrismaModel> | $Enums.RoundResult | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumRoundResultNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumRoundResultNullableFilter<$PrismaModel>
 }
 
 export type EnumBidStatusFilter<$PrismaModel = never> = {
@@ -527,6 +544,13 @@ export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
 }
 
+export type NestedEnumRoundResultNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoundResult | Prisma.EnumRoundResultFieldRefInput<$PrismaModel> | null
+  in?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumRoundResultNullableFilter<$PrismaModel> | $Enums.RoundResult | null
+}
+
 export type NestedEnumRoundStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.RoundStatus | Prisma.EnumRoundStatusFieldRefInput<$PrismaModel>
   in?: $Enums.RoundStatus[] | Prisma.ListEnumRoundStatusFieldRefInput<$PrismaModel>
@@ -609,6 +633,16 @@ export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumRoundResultNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.RoundResult | Prisma.EnumRoundResultFieldRefInput<$PrismaModel> | null
+  in?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.RoundResult[] | Prisma.ListEnumRoundResultFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumRoundResultNullableWithAggregatesFilter<$PrismaModel> | $Enums.RoundResult | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumRoundResultNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumRoundResultNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumBidStatusFilter<$PrismaModel = never> = {

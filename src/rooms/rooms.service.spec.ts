@@ -221,9 +221,30 @@ describe('RoomsService', () => {
     tx.round.findUnique.mockResolvedValue(roundSnapshot('round-2', 2));
     await scheduler(tx).activateDueRooms(now);
     expect(enqueued(tx)).toEqual([
-      expect.objectContaining({ eventType: 'auction.round.closed.v1', roundId: 'round-1', currentPrice: '25', currentBidderId: 'alice', closedAt: now.toISOString() }),
+      expect.objectContaining({
+        eventType: 'auction.round.closed.v1', roundId: 'round-1', currentPrice: '25', currentBidderId: 'alice', closedAt: now.toISOString(),
+        result: 'AWARDED', winnerId: 'alice', winningAmount: '25',
+      }),
       expect.objectContaining({ eventType: 'auction.round.activated.v1', roundId: 'round-2', position: 2 }),
     ]);
+  });
+  it('adjudica la ronda a quien lideraba y registra el resultado (HU-28)', async () => {
+    const tx = schedulerTx();
+    tx.round.findMany.mockResolvedValue([roundSnapshot('round-1', 1)]);
+    await scheduler(tx).activateDueRooms(now);
+    expect(tx.round.updateMany).toHaveBeenCalledWith({
+      where: { id: 'round-1', status: 'ACTIVE', endsAt: { lte: now } },
+      data: { status: 'CLOSED', result: 'AWARDED', winnerId: 'alice', closedAt: now },
+    });
+  });
+  it('una ronda sin pujas queda desierta, sin ganador ni monto a cobrar', async () => {
+    const tx = schedulerTx();
+    tx.round.findMany.mockResolvedValue([{ ...roundSnapshot('round-1', 1), currentBidderId: null }]);
+    await scheduler(tx).activateDueRooms(now);
+    expect(tx.round.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: { status: 'CLOSED', result: 'DESERTED', winnerId: null, closedAt: now },
+    }));
+    expect(enqueued(tx)[0]).toMatchObject({ result: 'DESERTED', winnerId: null, winningAmount: null });
   });
   it('cierra la sala cuando vence su ultima ronda', async () => {
     const tx = schedulerTx();
