@@ -274,6 +274,11 @@ export type EnumBidStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumBidStatusFilter<$PrismaModel> | $Enums.BidStatus
 }
 
+export type BoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
 export type EnumBidStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.BidStatus | Prisma.EnumBidStatusFieldRefInput<$PrismaModel>
   in?: $Enums.BidStatus[] | Prisma.ListEnumBidStatusFieldRefInput<$PrismaModel>
@@ -282,6 +287,31 @@ export type EnumBidStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumBidStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumBidStatusFilter<$PrismaModel>
+}
+
+export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
+export type EnumAutoBidStopReasonNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoBidStopReason | Prisma.EnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  in?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel> | $Enums.AutoBidStopReason | null
+}
+
+export type EnumAutoBidStopReasonNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoBidStopReason | Prisma.EnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  in?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumAutoBidStopReasonNullableWithAggregatesFilter<$PrismaModel> | $Enums.AutoBidStopReason | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel>
 }
 
 export type EnumAuctionableKindFilter<$PrismaModel = never> = {
@@ -652,6 +682,11 @@ export type NestedEnumBidStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumBidStatusFilter<$PrismaModel> | $Enums.BidStatus
 }
 
+export type NestedBoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
 export type NestedEnumBidStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.BidStatus | Prisma.EnumBidStatusFieldRefInput<$PrismaModel>
   in?: $Enums.BidStatus[] | Prisma.ListEnumBidStatusFieldRefInput<$PrismaModel>
@@ -660,6 +695,31 @@ export type NestedEnumBidStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumBidStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumBidStatusFilter<$PrismaModel>
+}
+
+export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
+export type NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoBidStopReason | Prisma.EnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  in?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel> | $Enums.AutoBidStopReason | null
+}
+
+export type NestedEnumAutoBidStopReasonNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AutoBidStopReason | Prisma.EnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  in?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.AutoBidStopReason[] | Prisma.ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumAutoBidStopReasonNullableWithAggregatesFilter<$PrismaModel> | $Enums.AutoBidStopReason | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAutoBidStopReasonNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumAuctionableKindFilter<$PrismaModel = never> = {

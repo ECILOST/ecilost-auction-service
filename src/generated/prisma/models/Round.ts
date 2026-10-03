@@ -31,6 +31,7 @@ export type RoundAvgAggregateOutputType = {
   startingPrice: runtime.Decimal | null
   currentPrice: runtime.Decimal | null
   nextBidSequence: number | null
+  nextAutoBidPriority: number | null
 }
 
 export type RoundSumAggregateOutputType = {
@@ -38,6 +39,7 @@ export type RoundSumAggregateOutputType = {
   startingPrice: runtime.Decimal | null
   currentPrice: runtime.Decimal | null
   nextBidSequence: bigint | null
+  nextAutoBidPriority: bigint | null
 }
 
 export type RoundMinAggregateOutputType = {
@@ -49,6 +51,7 @@ export type RoundMinAggregateOutputType = {
   currentPrice: runtime.Decimal | null
   currentBidderId: string | null
   nextBidSequence: bigint | null
+  nextAutoBidPriority: bigint | null
   startedAt: Date | null
   endsAt: Date | null
   maximumEndsAt: Date | null
@@ -66,6 +69,7 @@ export type RoundMaxAggregateOutputType = {
   currentPrice: runtime.Decimal | null
   currentBidderId: string | null
   nextBidSequence: bigint | null
+  nextAutoBidPriority: bigint | null
   startedAt: Date | null
   endsAt: Date | null
   maximumEndsAt: Date | null
@@ -83,6 +87,7 @@ export type RoundCountAggregateOutputType = {
   currentPrice: number
   currentBidderId: number
   nextBidSequence: number
+  nextAutoBidPriority: number
   startedAt: number
   endsAt: number
   maximumEndsAt: number
@@ -98,6 +103,7 @@ export type RoundAvgAggregateInputType = {
   startingPrice?: true
   currentPrice?: true
   nextBidSequence?: true
+  nextAutoBidPriority?: true
 }
 
 export type RoundSumAggregateInputType = {
@@ -105,6 +111,7 @@ export type RoundSumAggregateInputType = {
   startingPrice?: true
   currentPrice?: true
   nextBidSequence?: true
+  nextAutoBidPriority?: true
 }
 
 export type RoundMinAggregateInputType = {
@@ -116,6 +123,7 @@ export type RoundMinAggregateInputType = {
   currentPrice?: true
   currentBidderId?: true
   nextBidSequence?: true
+  nextAutoBidPriority?: true
   startedAt?: true
   endsAt?: true
   maximumEndsAt?: true
@@ -133,6 +141,7 @@ export type RoundMaxAggregateInputType = {
   currentPrice?: true
   currentBidderId?: true
   nextBidSequence?: true
+  nextAutoBidPriority?: true
   startedAt?: true
   endsAt?: true
   maximumEndsAt?: true
@@ -150,6 +159,7 @@ export type RoundCountAggregateInputType = {
   currentPrice?: true
   currentBidderId?: true
   nextBidSequence?: true
+  nextAutoBidPriority?: true
   startedAt?: true
   endsAt?: true
   maximumEndsAt?: true
@@ -254,6 +264,7 @@ export type RoundGroupByOutputType = {
   currentPrice: runtime.Decimal
   currentBidderId: string | null
   nextBidSequence: bigint
+  nextAutoBidPriority: bigint
   startedAt: Date | null
   endsAt: Date | null
   maximumEndsAt: Date | null
@@ -294,6 +305,7 @@ export type RoundWhereInput = {
   currentPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.StringNullableFilter<"Round"> | string | null
   nextBidSequence?: Prisma.BigIntFilter<"Round"> | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFilter<"Round"> | bigint | number
   startedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
@@ -303,6 +315,7 @@ export type RoundWhereInput = {
   room?: Prisma.XOR<Prisma.RoomScalarRelationFilter, Prisma.RoomWhereInput>
   entries?: Prisma.RoundEntryListRelationFilter
   bids?: Prisma.BidListRelationFilter
+  autoBids?: Prisma.AutoBidListRelationFilter
 }
 
 export type RoundOrderByWithRelationInput = {
@@ -314,6 +327,7 @@ export type RoundOrderByWithRelationInput = {
   currentPrice?: Prisma.SortOrder
   currentBidderId?: Prisma.SortOrderInput | Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -323,6 +337,7 @@ export type RoundOrderByWithRelationInput = {
   room?: Prisma.RoomOrderByWithRelationInput
   entries?: Prisma.RoundEntryOrderByRelationAggregateInput
   bids?: Prisma.BidOrderByRelationAggregateInput
+  autoBids?: Prisma.AutoBidOrderByRelationAggregateInput
 }
 
 export type RoundWhereUniqueInput = Prisma.AtLeast<{
@@ -338,6 +353,7 @@ export type RoundWhereUniqueInput = Prisma.AtLeast<{
   currentPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.StringNullableFilter<"Round"> | string | null
   nextBidSequence?: Prisma.BigIntFilter<"Round"> | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFilter<"Round"> | bigint | number
   startedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
@@ -347,6 +363,7 @@ export type RoundWhereUniqueInput = Prisma.AtLeast<{
   room?: Prisma.XOR<Prisma.RoomScalarRelationFilter, Prisma.RoomWhereInput>
   entries?: Prisma.RoundEntryListRelationFilter
   bids?: Prisma.BidListRelationFilter
+  autoBids?: Prisma.AutoBidListRelationFilter
 }, "id" | "roomId_position">
 
 export type RoundOrderByWithAggregationInput = {
@@ -358,6 +375,7 @@ export type RoundOrderByWithAggregationInput = {
   currentPrice?: Prisma.SortOrder
   currentBidderId?: Prisma.SortOrderInput | Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -383,6 +401,7 @@ export type RoundScalarWhereWithAggregatesInput = {
   currentPrice?: Prisma.DecimalWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.StringNullableWithAggregatesFilter<"Round"> | string | null
   nextBidSequence?: Prisma.BigIntWithAggregatesFilter<"Round"> | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntWithAggregatesFilter<"Round"> | bigint | number
   startedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
@@ -399,6 +418,7 @@ export type RoundCreateInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -408,6 +428,7 @@ export type RoundCreateInput = {
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateInput = {
@@ -419,6 +440,7 @@ export type RoundUncheckedCreateInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -427,6 +449,7 @@ export type RoundUncheckedCreateInput = {
   closedAt?: Date | string | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUpdateInput = {
@@ -437,6 +460,7 @@ export type RoundUpdateInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -446,6 +470,7 @@ export type RoundUpdateInput = {
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateInput = {
@@ -457,6 +482,7 @@ export type RoundUncheckedUpdateInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -465,6 +491,7 @@ export type RoundUncheckedUpdateInput = {
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateManyInput = {
@@ -476,6 +503,7 @@ export type RoundCreateManyInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -492,6 +520,7 @@ export type RoundUpdateManyMutationInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -509,6 +538,7 @@ export type RoundUncheckedUpdateManyInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -541,6 +571,7 @@ export type RoundCountOrderByAggregateInput = {
   currentPrice?: Prisma.SortOrder
   currentBidderId?: Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrder
@@ -554,6 +585,7 @@ export type RoundAvgOrderByAggregateInput = {
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
 }
 
 export type RoundMaxOrderByAggregateInput = {
@@ -565,6 +597,7 @@ export type RoundMaxOrderByAggregateInput = {
   currentPrice?: Prisma.SortOrder
   currentBidderId?: Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrder
@@ -582,6 +615,7 @@ export type RoundMinOrderByAggregateInput = {
   currentPrice?: Prisma.SortOrder
   currentBidderId?: Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   maximumEndsAt?: Prisma.SortOrder
@@ -595,6 +629,7 @@ export type RoundSumOrderByAggregateInput = {
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   nextBidSequence?: Prisma.SortOrder
+  nextAutoBidPriority?: Prisma.SortOrder
 }
 
 export type RoundScalarRelationFilter = {
@@ -690,6 +725,20 @@ export type RoundUpdateOneRequiredWithoutBidsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RoundUpdateToOneWithWhereWithoutBidsInput, Prisma.RoundUpdateWithoutBidsInput>, Prisma.RoundUncheckedUpdateWithoutBidsInput>
 }
 
+export type RoundCreateNestedOneWithoutAutoBidsInput = {
+  create?: Prisma.XOR<Prisma.RoundCreateWithoutAutoBidsInput, Prisma.RoundUncheckedCreateWithoutAutoBidsInput>
+  connectOrCreate?: Prisma.RoundCreateOrConnectWithoutAutoBidsInput
+  connect?: Prisma.RoundWhereUniqueInput
+}
+
+export type RoundUpdateOneRequiredWithoutAutoBidsNestedInput = {
+  create?: Prisma.XOR<Prisma.RoundCreateWithoutAutoBidsInput, Prisma.RoundUncheckedCreateWithoutAutoBidsInput>
+  connectOrCreate?: Prisma.RoundCreateOrConnectWithoutAutoBidsInput
+  upsert?: Prisma.RoundUpsertWithoutAutoBidsInput
+  connect?: Prisma.RoundWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RoundUpdateToOneWithWhereWithoutAutoBidsInput, Prisma.RoundUpdateWithoutAutoBidsInput>, Prisma.RoundUncheckedUpdateWithoutAutoBidsInput>
+}
+
 export type RoundCreateNestedOneWithoutEntriesInput = {
   create?: Prisma.XOR<Prisma.RoundCreateWithoutEntriesInput, Prisma.RoundUncheckedCreateWithoutEntriesInput>
   connectOrCreate?: Prisma.RoundCreateOrConnectWithoutEntriesInput
@@ -712,6 +761,7 @@ export type RoundCreateWithoutRoomInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -720,6 +770,7 @@ export type RoundCreateWithoutRoomInput = {
   closedAt?: Date | string | null
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutRoomInput = {
@@ -730,6 +781,7 @@ export type RoundUncheckedCreateWithoutRoomInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -738,6 +790,7 @@ export type RoundUncheckedCreateWithoutRoomInput = {
   closedAt?: Date | string | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutRoomInput = {
@@ -778,6 +831,7 @@ export type RoundScalarWhereInput = {
   currentPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.StringNullableFilter<"Round"> | string | null
   nextBidSequence?: Prisma.BigIntFilter<"Round"> | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFilter<"Round"> | bigint | number
   startedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
   maximumEndsAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
@@ -794,6 +848,7 @@ export type RoundCreateWithoutBidsInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -802,6 +857,7 @@ export type RoundCreateWithoutBidsInput = {
   closedAt?: Date | string | null
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutBidsInput = {
@@ -813,6 +869,7 @@ export type RoundUncheckedCreateWithoutBidsInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -820,6 +877,7 @@ export type RoundUncheckedCreateWithoutBidsInput = {
   winnerId?: string | null
   closedAt?: Date | string | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutBidsInput = {
@@ -846,6 +904,7 @@ export type RoundUpdateWithoutBidsInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -854,6 +913,7 @@ export type RoundUpdateWithoutBidsInput = {
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutBidsInput = {
@@ -865,6 +925,7 @@ export type RoundUncheckedUpdateWithoutBidsInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -872,6 +933,103 @@ export type RoundUncheckedUpdateWithoutBidsInput = {
   winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
+}
+
+export type RoundCreateWithoutAutoBidsInput = {
+  id: string
+  position: number
+  status?: $Enums.RoundStatus
+  startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentBidderId?: string | null
+  nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
+  startedAt?: Date | string | null
+  endsAt?: Date | string | null
+  maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
+  room: Prisma.RoomCreateNestedOneWithoutRoundsInput
+  entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidCreateNestedManyWithoutRoundInput
+}
+
+export type RoundUncheckedCreateWithoutAutoBidsInput = {
+  id: string
+  roomId: string
+  position: number
+  status?: $Enums.RoundStatus
+  startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentBidderId?: string | null
+  nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
+  startedAt?: Date | string | null
+  endsAt?: Date | string | null
+  maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
+  entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
+}
+
+export type RoundCreateOrConnectWithoutAutoBidsInput = {
+  where: Prisma.RoundWhereUniqueInput
+  create: Prisma.XOR<Prisma.RoundCreateWithoutAutoBidsInput, Prisma.RoundUncheckedCreateWithoutAutoBidsInput>
+}
+
+export type RoundUpsertWithoutAutoBidsInput = {
+  update: Prisma.XOR<Prisma.RoundUpdateWithoutAutoBidsInput, Prisma.RoundUncheckedUpdateWithoutAutoBidsInput>
+  create: Prisma.XOR<Prisma.RoundCreateWithoutAutoBidsInput, Prisma.RoundUncheckedCreateWithoutAutoBidsInput>
+  where?: Prisma.RoundWhereInput
+}
+
+export type RoundUpdateToOneWithWhereWithoutAutoBidsInput = {
+  where?: Prisma.RoundWhereInput
+  data: Prisma.XOR<Prisma.RoundUpdateWithoutAutoBidsInput, Prisma.RoundUncheckedUpdateWithoutAutoBidsInput>
+}
+
+export type RoundUpdateWithoutAutoBidsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
+  entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
+}
+
+export type RoundUncheckedUpdateWithoutAutoBidsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  roomId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateWithoutEntriesInput = {
@@ -882,6 +1040,7 @@ export type RoundCreateWithoutEntriesInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -890,6 +1049,7 @@ export type RoundCreateWithoutEntriesInput = {
   closedAt?: Date | string | null
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutEntriesInput = {
@@ -901,6 +1061,7 @@ export type RoundUncheckedCreateWithoutEntriesInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -908,6 +1069,7 @@ export type RoundUncheckedCreateWithoutEntriesInput = {
   winnerId?: string | null
   closedAt?: Date | string | null
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutEntriesInput = {
@@ -934,6 +1096,7 @@ export type RoundUpdateWithoutEntriesInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -942,6 +1105,7 @@ export type RoundUpdateWithoutEntriesInput = {
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutEntriesInput = {
@@ -953,6 +1117,7 @@ export type RoundUncheckedUpdateWithoutEntriesInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -960,6 +1125,7 @@ export type RoundUncheckedUpdateWithoutEntriesInput = {
   winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateManyRoomInput = {
@@ -970,6 +1136,7 @@ export type RoundCreateManyRoomInput = {
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: string | null
   nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
   startedAt?: Date | string | null
   endsAt?: Date | string | null
   maximumEndsAt?: Date | string | null
@@ -986,6 +1153,7 @@ export type RoundUpdateWithoutRoomInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -994,6 +1162,7 @@ export type RoundUpdateWithoutRoomInput = {
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutRoomInput = {
@@ -1004,6 +1173,7 @@ export type RoundUncheckedUpdateWithoutRoomInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1012,6 +1182,7 @@ export type RoundUncheckedUpdateWithoutRoomInput = {
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateManyWithoutRoomInput = {
@@ -1022,6 +1193,7 @@ export type RoundUncheckedUpdateManyWithoutRoomInput = {
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1038,11 +1210,13 @@ export type RoundUncheckedUpdateManyWithoutRoomInput = {
 export type RoundCountOutputType = {
   entries: number
   bids: number
+  autoBids: number
 }
 
 export type RoundCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entries?: boolean | RoundCountOutputTypeCountEntriesArgs
   bids?: boolean | RoundCountOutputTypeCountBidsArgs
+  autoBids?: boolean | RoundCountOutputTypeCountAutoBidsArgs
 }
 
 /**
@@ -1069,6 +1243,13 @@ export type RoundCountOutputTypeCountBidsArgs<ExtArgs extends runtime.Types.Exte
   where?: Prisma.BidWhereInput
 }
 
+/**
+ * RoundCountOutputType without action
+ */
+export type RoundCountOutputTypeCountAutoBidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AutoBidWhereInput
+}
+
 
 export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1079,6 +1260,7 @@ export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   currentPrice?: boolean
   currentBidderId?: boolean
   nextBidSequence?: boolean
+  nextAutoBidPriority?: boolean
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
@@ -1088,6 +1270,7 @@ export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
   bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
+  autoBids?: boolean | Prisma.Round$autoBidsArgs<ExtArgs>
   _count?: boolean | Prisma.RoundCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -1100,6 +1283,7 @@ export type RoundSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   currentPrice?: boolean
   currentBidderId?: boolean
   nextBidSequence?: boolean
+  nextAutoBidPriority?: boolean
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
@@ -1118,6 +1302,7 @@ export type RoundSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   currentPrice?: boolean
   currentBidderId?: boolean
   nextBidSequence?: boolean
+  nextAutoBidPriority?: boolean
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
@@ -1136,6 +1321,7 @@ export type RoundSelectScalar = {
   currentPrice?: boolean
   currentBidderId?: boolean
   nextBidSequence?: boolean
+  nextAutoBidPriority?: boolean
   startedAt?: boolean
   endsAt?: boolean
   maximumEndsAt?: boolean
@@ -1144,11 +1330,12 @@ export type RoundSelectScalar = {
   closedAt?: boolean
 }
 
-export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status" | "startingPrice" | "currentPrice" | "currentBidderId" | "nextBidSequence" | "startedAt" | "endsAt" | "maximumEndsAt" | "result" | "winnerId" | "closedAt", ExtArgs["result"]["round"]>
+export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status" | "startingPrice" | "currentPrice" | "currentBidderId" | "nextBidSequence" | "nextAutoBidPriority" | "startedAt" | "endsAt" | "maximumEndsAt" | "result" | "winnerId" | "closedAt", ExtArgs["result"]["round"]>
 export type RoundInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
   bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
+  autoBids?: boolean | Prisma.Round$autoBidsArgs<ExtArgs>
   _count?: boolean | Prisma.RoundCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoundIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1164,6 +1351,7 @@ export type $RoundPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     room: Prisma.$RoomPayload<ExtArgs>
     entries: Prisma.$RoundEntryPayload<ExtArgs>[]
     bids: Prisma.$BidPayload<ExtArgs>[]
+    autoBids: Prisma.$AutoBidPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1174,6 +1362,7 @@ export type $RoundPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     currentPrice: runtime.Decimal
     currentBidderId: string | null
     nextBidSequence: bigint
+    nextAutoBidPriority: bigint
     startedAt: Date | null
     endsAt: Date | null
     maximumEndsAt: Date | null
@@ -1577,6 +1766,7 @@ export interface Prisma__RoundClient<T, Null = never, ExtArgs extends runtime.Ty
   room<T extends Prisma.RoomDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoomDefaultArgs<ExtArgs>>): Prisma.Prisma__RoomClient<runtime.Types.Result.GetResult<Prisma.$RoomPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   entries<T extends Prisma.Round$entriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoundEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   bids<T extends Prisma.Round$bidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$bidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  autoBids<T extends Prisma.Round$autoBidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$autoBidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AutoBidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1614,6 +1804,7 @@ export interface RoundFieldRefs {
   readonly currentPrice: Prisma.FieldRef<"Round", 'Decimal'>
   readonly currentBidderId: Prisma.FieldRef<"Round", 'String'>
   readonly nextBidSequence: Prisma.FieldRef<"Round", 'BigInt'>
+  readonly nextAutoBidPriority: Prisma.FieldRef<"Round", 'BigInt'>
   readonly startedAt: Prisma.FieldRef<"Round", 'DateTime'>
   readonly endsAt: Prisma.FieldRef<"Round", 'DateTime'>
   readonly maximumEndsAt: Prisma.FieldRef<"Round", 'DateTime'>
@@ -2066,6 +2257,30 @@ export type Round$bidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
   take?: number
   skip?: number
   distinct?: Prisma.BidScalarFieldEnum | Prisma.BidScalarFieldEnum[]
+}
+
+/**
+ * Round.autoBids
+ */
+export type Round$autoBidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AutoBid
+   */
+  select?: Prisma.AutoBidSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AutoBid
+   */
+  omit?: Prisma.AutoBidOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AutoBidInclude<ExtArgs> | null
+  where?: Prisma.AutoBidWhereInput
+  orderBy?: Prisma.AutoBidOrderByWithRelationInput | Prisma.AutoBidOrderByWithRelationInput[]
+  cursor?: Prisma.AutoBidWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AutoBidScalarFieldEnum | Prisma.AutoBidScalarFieldEnum[]
 }
 
 /**
