@@ -81,10 +81,17 @@ type RoundEventSnapshot = {
   entries: Array<{ kind: string; catalogId: string }>;
 };
 
+const ROUND_EVENT_SELECT = {
+  id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
+  startedAt: true, endsAt: true, maximumEndsAt: true,
+  entries: { select: { kind: true, catalogId: true } },
+} as const;
+
 async function enqueueRoundEvent(
   tx: Prisma.TransactionClient,
   eventType: 'auction.round.activated.v1' | 'auction.round.closed.v1',
   round: RoundEventSnapshot,
+  roomStatus: RoomStatus,
   closing?: { closedAt: Date; result: RoundResult; winnerId: string | null },
 ) {
   const eventId = randomUUID();
@@ -101,6 +108,8 @@ async function enqueueRoundEvent(
         roomId: round.roomId,
         roundId: round.id,
         position: round.position,
+        // Estado de la sala tras la transicion: la ultima ronda cerrada deja la sala CLOSED.
+        roomStatus,
         currentPrice: round.currentPrice.toString(),
         currentBidderId: round.currentBidderId,
         startedAt: round.startedAt?.toISOString() ?? null,
@@ -306,7 +315,8 @@ export class RoomsService {
   async getRoom(roomId: string, userId: string) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId }, select: roomDetailSelect(userId) });
     if (!room) throw new NotFoundException('La sala no existe.');
-    return toRoomDetail(room, userId);
+    // `serverTime` deja al cliente corregir su reloj para pintar el contador; nunca decide nada.
+    return { ...toRoomDetail(room, userId), serverTime: new Date() };
   }
 
   async getCurrentState(roomId: string, userId: string) {
@@ -328,7 +338,10 @@ export class RoomsService {
             currentBidderId: true,
             startedAt: true,
             endsAt: true,
+            maximumEndsAt: true,
             entries: { select: { kind: true, catalogId: true } },
+            // Solo la puja automatica de quien consulta (HU-22).
+            autoBids: { where: { bidderId: userId }, select: { enabled: true, maximumAmount: true, stoppedReason: true }, take: 1 },
           },
         },
       },
@@ -337,13 +350,46 @@ export class RoomsService {
     if (room.participants.length === 0) throw new ForbiddenException('Debes estar admitido en la sala para consultar su estado.');
 
     const { participants: _participants, rounds, ...roomState } = room;
-    return { ...roomState, currentRound: rounds[0] ?? null, serverTime: new Date() };
+    const current = rounds[0];
+    if (!current) return { ...roomState, currentRound: null, autoBid: null, serverTime: new Date() };
+    const { autoBids, ...currentRound } = current;
+    const autoBid = autoBids?.[0];
+    return {
+      ...roomState,
+      currentRound,
+      autoBid: autoBid
+        ? { enabled: autoBid.enabled, maximumAmount: autoBid.maximumAmount, stopped: autoBid.stoppedReason !== null, stoppedReason: autoBid.stoppedReason }
+        : null,
+      serverTime: new Date(),
+    };
   }
   /**
-   * Cambia una sala a ACTIVE una sola vez cuando llega su hora de inicio y abre
-   * su primera ronda. Las rondas posteriores conservan su propio ciclo de vida.
+   * Hora del reloj autoritativo: el de PostgreSQL, el mismo con el que la puja decide si
+   * llego a tiempo (`"endsAt" > CURRENT_TIMESTAMP`). Con un solo reloj, un desfase entre la
+   * maquina del servicio y la base no puede cerrar una ronda que la base aun considera
+   * abierta, ni al reves. Se pide como texto UTC para no depender de la zona de la sesion.
    */
-  async activateDueRooms(now = new Date()) {
+  private async databaseNow(): Promise<Date> {
+    const [{ now }] = await this.prisma.$queryRaw<Array<{ now: string }>>`
+      SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS now
+    `;
+    return new Date(now);
+  }
+
+  /**
+   * Motor del ciclo de vida (HU-18, HU-19). El reloj del servidor es su unico dueno: el
+   * cliente no puede abrir ni cerrar nada.
+   *
+   * - Una sala SCHEDULED cuya hora llego pasa a ACTIVE (y con eso cierra el acceso) y abre
+   *   su primera ronda.
+   * - Una ronda ACTIVE vencida se cierra con su ganador y, en el mismo instante, se abre la
+   *   siguiente; si era la ultima, la sala pasa a CLOSED y ya no acepta pujas.
+   *
+   * Todas las condiciones van en el WHERE: si dos instancias corren el ciclo a la vez, solo
+   * una cambia cada fila y solo esa publica el evento.
+   */
+  async activateDueRooms(at?: Date) {
+    const now = at ?? (await this.databaseNow());
     return this.prisma.$transaction(async (tx) => {
       const dueRooms = await tx.room.findMany({
         where: { status: RoomStatus.SCHEDULED, startsAt: { lte: now } },
@@ -358,6 +404,7 @@ export class RoomsService {
         });
         if (activated.count !== 1) continue;
         count += 1;
+        this.logger.log(`room=${room.id} SCHEDULED -> ACTIVE at=${now.toISOString()}`);
         const firstRound = await tx.round.updateMany({
           where: { roomId: room.id, position: 1, status: RoundStatus.SCHEDULED },
           data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
@@ -365,62 +412,74 @@ export class RoomsService {
         if (firstRound.count === 1) {
           const activatedRound = await tx.round.findFirst({
             where: { roomId: room.id, position: 1, status: RoundStatus.ACTIVE },
-            select: {
-              id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
-              startedAt: true, endsAt: true, maximumEndsAt: true,
-              entries: { select: { kind: true, catalogId: true } },
-            },
+            select: ROUND_EVENT_SELECT,
           });
-          if (activatedRound) await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound);
+          if (activatedRound) {
+            await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound, RoomStatus.ACTIVE);
+            this.logger.log(`room=${room.id} round=${activatedRound.id} position=1 SCHEDULED -> ACTIVE endsAt=${activatedRound.endsAt?.toISOString()}`);
+          }
         }
       }
 
       const expiredRounds = await tx.round.findMany({
         where: { status: RoundStatus.ACTIVE, endsAt: { lte: now } },
-        select: {
-          id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
-          startedAt: true, endsAt: true, maximumEndsAt: true,
-          entries: { select: { kind: true, catalogId: true } },
-        },
+        orderBy: [{ endsAt: 'asc' }, { id: 'asc' }],
+        select: { id: true },
       });
-      for (const round of expiredRounds) {
-        // El lider leido aqui es definitivo: una puja solo entra con `endsAt` futuro, y esta
-        // ronda ya vencio en `now`, asi que nadie puede cambiarlo entre la lectura y el cierre.
+      for (const { id } of expiredRounds) {
+        // Se bloquea la fila antes de leer al lider. Una puja en curso termina primero (o
+        // espera a este cierre), y lo leido despues del bloqueo es definitivo: si esa puja
+        // extendio el cierre, la ronda ya no vence y no se cierra; si no, su lider es el
+        // ganador. Leerlo antes del bloqueo podia adjudicar a quien ya habia sido superado.
+        const locked = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM "rounds"
+          WHERE id = ${id}
+            AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
+            AND "endsAt" <= CAST(${now.toISOString()} AS timestamp)
+          FOR UPDATE
+        `;
+        if (locked.length === 0) continue;
+        const round = await tx.round.findUnique({ where: { id }, select: ROUND_EVENT_SELECT });
+        if (!round) continue;
+
         const result = round.currentBidderId ? RoundResult.AWARDED : RoundResult.DESERTED;
-        const closed = await tx.round.updateMany({
-          where: { id: round.id, status: RoundStatus.ACTIVE, endsAt: { lte: now } },
+        await tx.round.update({
+          where: { id },
           data: { status: RoundStatus.CLOSED, result, winnerId: round.currentBidderId, closedAt: now },
         });
-        if (closed.count !== 1) continue;
-
-        await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, { closedAt: now, result, winnerId: round.currentBidderId });
+        this.logger.log(
+          `room=${round.roomId} round=${round.id} position=${round.position} ACTIVE -> CLOSED result=${result} price=${round.currentPrice.toString()} at=${now.toISOString()}`,
+        );
 
         const nextRound = await tx.round.findFirst({
           where: { roomId: round.roomId, position: { gt: round.position }, status: RoundStatus.SCHEDULED },
           orderBy: { position: 'asc' },
           select: { id: true },
         });
-        if (nextRound) {
-          const activated = await tx.round.updateMany({
-            where: { id: nextRound.id, status: RoundStatus.SCHEDULED },
-            data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
-          });
-          if (activated.count === 1) {
-            const activatedRound = await tx.round.findUnique({
-              where: { id: nextRound.id },
-              select: {
-                id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
-                startedAt: true, endsAt: true, maximumEndsAt: true,
-                entries: { select: { kind: true, catalogId: true } },
-              },
-            });
-            if (activatedRound) await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound);
-          }
-        } else {
+        if (!nextRound) {
           await tx.room.updateMany({
             where: { id: round.roomId, status: RoomStatus.ACTIVE },
             data: { status: RoomStatus.CLOSED },
           });
+          this.logger.log(`room=${round.roomId} ACTIVE -> CLOSED (ultima ronda) at=${now.toISOString()}`);
+        }
+        await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, nextRound ? RoomStatus.ACTIVE : RoomStatus.CLOSED, {
+          closedAt: now, result, winnerId: round.currentBidderId,
+        });
+        if (!nextRound) continue;
+
+        const activated = await tx.round.updateMany({
+          where: { id: nextRound.id, status: RoundStatus.SCHEDULED },
+          data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
+        });
+        if (activated.count === 1) {
+          const activatedRound = await tx.round.findUnique({ where: { id: nextRound.id }, select: ROUND_EVENT_SELECT });
+          if (activatedRound) {
+            await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound, RoomStatus.ACTIVE);
+            this.logger.log(
+              `room=${activatedRound.roomId} round=${activatedRound.id} position=${activatedRound.position} SCHEDULED -> ACTIVE endsAt=${activatedRound.endsAt?.toISOString()}`,
+            );
+          }
         }
       }
       return { count };
