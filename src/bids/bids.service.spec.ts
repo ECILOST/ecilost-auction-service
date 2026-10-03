@@ -102,6 +102,21 @@ describe('BidsService', () => {
     expect(wallet.hold).not.toHaveBeenCalled();
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
+  it('keeps the accepted bid when wallet cannot release the outbid leader: settlement frees it later', async () => {
+    const prisma = { $transaction: inTransaction, round: { findUnique: vi.fn().mockResolvedValue(activeRound()) }, $queryRaw: vi.fn().mockResolvedValue(placed()) };
+    const wallet = { hold: vi.fn().mockResolvedValue(true), release: vi.fn().mockRejectedValue(new Error('La billetera no respondio.')) };
+    const service = new BidsService(prisma as never, wallet as never);
+    await expect(service.place('round', 'bob', 1100)).resolves.toMatchObject({ id: 'bid', bidderId: 'bob' });
+    expect(wallet.release).toHaveBeenCalledWith('alice', 'bid:round:alice', 1000);
+  });
+  it('undoes a hold whose answer never arrived, without placing the bid', async () => {
+    const prisma = { $transaction: inTransaction, round: { findUnique: vi.fn().mockResolvedValue(activeRound()) }, $queryRaw: vi.fn() };
+    const wallet = { hold: vi.fn().mockRejectedValue(new Error('La billetera no respondio.')), release: vi.fn().mockResolvedValue(true) };
+    const service = new BidsService(prisma as never, wallet as never);
+    await expect(service.place('round', 'bob', 1100)).rejects.toThrow('La billetera no respondio.');
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    expect(wallet.release).toHaveBeenCalledWith('bob', 'bid:round:bob', 1100);
+  });
 });
 
 describe('minimumBid', () => {

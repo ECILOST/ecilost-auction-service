@@ -70,8 +70,10 @@ export class BidsService {
    * despues de soltar el suyo, de modo que dos estudiantes no pueden esperarse en circulo.
    */
   async withBidderLock<T>(roundId: string, bidderId: string, work: () => Promise<T>): Promise<T> {
-    if (this.lockedSections >= MAX_LOCKED_SECTIONS) await new Promise<void>((resolve) => this.waitingSections.push(resolve));
-    this.lockedSections += 1;
+    // Quien espera recibe el cupo de quien sale, sin devolverlo al contador: si se devolviera,
+    // una llamada nueva podia tomarlo en el instante entre soltarlo y despertar al que esperaba.
+    if (this.lockedSections < MAX_LOCKED_SECTIONS) this.lockedSections += 1;
+    else await new Promise<void>((resolve) => this.waitingSections.push(resolve));
     try {
       return await this.prisma.$transaction(
         async (tx) => {
@@ -81,8 +83,9 @@ export class BidsService {
         { maxWait: 10_000, timeout: 30_000 },
       );
     } finally {
-      this.lockedSections -= 1;
-      this.waitingSections.shift()?.();
+      const next = this.waitingSections.shift();
+      if (next) next();
+      else this.lockedSections -= 1;
     }
   }
 
@@ -103,7 +106,15 @@ export class BidsService {
     if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('La ronda no esta activa.');
     if (bidAmount.lt(minimumBid(round))) throw new ConflictException(`La puja debe ser de al menos ${minimumBid(round).toString()} ECICoin.`);
     const placed = await this.withBidderLock(roundId, bidderId, async () => {
-      const accepted = await this.wallet.hold(bidderId, holdReference(roundId, bidderId), amount);
+      let accepted: boolean;
+      try {
+        accepted = await this.wallet.hold(bidderId, holdReference(roundId, bidderId), amount);
+      } catch (error) {
+        // Sin respuesta no se sabe si wallet alcanzo a reservar: se deshace por si acaso, igual
+        // que en la puja automatica, para no dejar ECICoin retenidos por una puja que no entro.
+        await this.restoreHold(roundId, bidderId, amount).catch(() => undefined);
+        throw error;
+      }
       if (!accepted) throw new ConflictException('No tienes ECICoin disponibles suficientes para esta puja.');
 
       const result = await this.compareAndPlace(roundId, bidderId, bidAmount);
@@ -137,14 +148,26 @@ export class BidsService {
     return this.compareAndPlace(roundId, bidderId, amount, expected);
   }
 
-  /** Libera la reserva de quien acaba de dejar de liderar. Va versionada por su monto. */
+  /**
+   * Libera la reserva de quien acaba de dejar de liderar. Va versionada por su monto.
+   *
+   * Corre despues de guardar la puja nueva, asi que no puede fallarle a quien pujo: su puja
+   * ya entro y lidera. Antes un fallo aqui respondia 409 y la persona creia que no habia
+   * pujado. Si wallet no libera ahora, la liquidacion al cerrar la ronda devuelve esa
+   * reserva igual (libera todas las que no son del ganador); queda en el log.
+   */
   async releaseOutbid(placed: PlacedBid) {
     const { previousBidderId, previousPrice, roundId } = placed;
     if (!previousBidderId || previousBidderId === placed.bidderId || !previousPrice) return;
-    const released = await this.withBidderLock(roundId, previousBidderId, () =>
-      this.wallet.release(previousBidderId, holdReference(roundId, previousBidderId), Number(previousPrice)),
-    );
-    if (!released) throw new ConflictException('No fue posible liberar la puja anterior.');
+    try {
+      const released = await this.withBidderLock(roundId, previousBidderId, () =>
+        this.wallet.release(previousBidderId, holdReference(roundId, previousBidderId), Number(previousPrice)),
+      );
+      if (released) return;
+      this.logger.warn(`round=${roundId} bidder=${previousBidderId} wallet rechazo liberar la puja superada; se liberara al liquidar la ronda`);
+    } catch (error) {
+      this.logger.warn(`round=${roundId} bidder=${previousBidderId} no se pudo liberar la puja superada; se liberara al liquidar la ronda: ${String(error)}`);
+    }
   }
 
   /**
