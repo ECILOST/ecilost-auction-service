@@ -401,6 +401,7 @@ export const ModelName = {
   RoomParticipant: 'RoomParticipant',
   Round: 'Round',
   Bid: 'Bid',
+  AutoBid: 'AutoBid',
   RoundEntry: 'RoundEntry',
   OutboxEvent: 'OutboxEvent'
 } as const
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "room" | "roomParticipant" | "round" | "bid" | "roundEntry" | "outboxEvent"
+    modelProps: "room" | "roomParticipant" | "round" | "bid" | "autoBid" | "roundEntry" | "outboxEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -718,6 +719,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AutoBid: {
+      payload: Prisma.$AutoBidPayload<ExtArgs>
+      fields: Prisma.AutoBidFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AutoBidFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AutoBidFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>
+        }
+        findFirst: {
+          args: Prisma.AutoBidFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AutoBidFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>
+        }
+        findMany: {
+          args: Prisma.AutoBidFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>[]
+        }
+        create: {
+          args: Prisma.AutoBidCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>
+        }
+        createMany: {
+          args: Prisma.AutoBidCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AutoBidCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>[]
+        }
+        delete: {
+          args: Prisma.AutoBidDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>
+        }
+        update: {
+          args: Prisma.AutoBidUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>
+        }
+        deleteMany: {
+          args: Prisma.AutoBidDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AutoBidUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AutoBidUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>[]
+        }
+        upsert: {
+          args: Prisma.AutoBidUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AutoBidPayload>
+        }
+        aggregate: {
+          args: Prisma.AutoBidAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAutoBid>
+        }
+        groupBy: {
+          args: Prisma.AutoBidGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoBidGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AutoBidCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AutoBidCountAggregateOutputType> | number
+        }
+      }
+    }
     RoundEntry: {
       payload: Prisma.$RoundEntryPayload<ExtArgs>
       fields: Prisma.RoundEntryFieldRefs
@@ -938,6 +1013,7 @@ export const RoundScalarFieldEnum = {
   currentPrice: 'currentPrice',
   currentBidderId: 'currentBidderId',
   nextBidSequence: 'nextBidSequence',
+  nextAutoBidPriority: 'nextAutoBidPriority',
   startedAt: 'startedAt',
   endsAt: 'endsAt',
   maximumEndsAt: 'maximumEndsAt',
@@ -956,11 +1032,27 @@ export const BidScalarFieldEnum = {
   amount: 'amount',
   sequence: 'sequence',
   status: 'status',
+  automatic: 'automatic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type BidScalarFieldEnum = (typeof BidScalarFieldEnum)[keyof typeof BidScalarFieldEnum]
+
+
+export const AutoBidScalarFieldEnum = {
+  id: 'id',
+  roundId: 'roundId',
+  bidderId: 'bidderId',
+  maximumAmount: 'maximumAmount',
+  enabled: 'enabled',
+  priority: 'priority',
+  stoppedReason: 'stoppedReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AutoBidScalarFieldEnum = (typeof AutoBidScalarFieldEnum)[keyof typeof AutoBidScalarFieldEnum]
 
 
 export const RoundEntryScalarFieldEnum = {
@@ -1162,6 +1254,27 @@ export type ListEnumBidStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'AutoBidStopReason'
+ */
+export type EnumAutoBidStopReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AutoBidStopReason'>
+    
+
+
+/**
+ * Reference to a field of type 'AutoBidStopReason[]'
+ */
+export type ListEnumAutoBidStopReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AutoBidStopReason[]'>
+    
+
+
+/**
  * Reference to a field of type 'AuctionableKind'
  */
 export type EnumAuctionableKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuctionableKind'>
@@ -1357,6 +1470,7 @@ export type GlobalOmitConfig = {
   roomParticipant?: Prisma.RoomParticipantOmit
   round?: Prisma.RoundOmit
   bid?: Prisma.BidOmit
+  autoBid?: Prisma.AutoBidOmit
   roundEntry?: Prisma.RoundEntryOmit
   outboxEvent?: Prisma.OutboxEventOmit
 }

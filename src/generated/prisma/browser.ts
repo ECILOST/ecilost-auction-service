@@ -38,6 +38,11 @@ export type Round = Prisma.RoundModel
  */
 export type Bid = Prisma.BidModel
 /**
+ * Model AutoBid
+ * 
+ */
+export type AutoBid = Prisma.AutoBidModel
+/**
  * Model RoundEntry
  * 
  */

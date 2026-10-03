@@ -55,6 +55,7 @@ export const ModelName = {
   RoomParticipant: 'RoomParticipant',
   Round: 'Round',
   Bid: 'Bid',
+  AutoBid: 'AutoBid',
   RoundEntry: 'RoundEntry',
   OutboxEvent: 'OutboxEvent'
 } as const
@@ -108,6 +109,7 @@ export const RoundScalarFieldEnum = {
   currentPrice: 'currentPrice',
   currentBidderId: 'currentBidderId',
   nextBidSequence: 'nextBidSequence',
+  nextAutoBidPriority: 'nextAutoBidPriority',
   startedAt: 'startedAt',
   endsAt: 'endsAt',
   maximumEndsAt: 'maximumEndsAt',
@@ -126,11 +128,27 @@ export const BidScalarFieldEnum = {
   amount: 'amount',
   sequence: 'sequence',
   status: 'status',
+  automatic: 'automatic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type BidScalarFieldEnum = (typeof BidScalarFieldEnum)[keyof typeof BidScalarFieldEnum]
+
+
+export const AutoBidScalarFieldEnum = {
+  id: 'id',
+  roundId: 'roundId',
+  bidderId: 'bidderId',
+  maximumAmount: 'maximumAmount',
+  enabled: 'enabled',
+  priority: 'priority',
+  stoppedReason: 'stoppedReason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AutoBidScalarFieldEnum = (typeof AutoBidScalarFieldEnum)[keyof typeof AutoBidScalarFieldEnum]
 
 
 export const RoundEntryScalarFieldEnum = {

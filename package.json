@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "test:integration": "vitest run --config vitest.config.integration.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

@@ -50,3 +50,11 @@ export const BidStatus = {
 } as const
 
 export type BidStatus = (typeof BidStatus)[keyof typeof BidStatus]
+
+
+export const AutoBidStopReason = {
+  LIMIT_REACHED: 'LIMIT_REACHED',
+  INSUFFICIENT_FUNDS: 'INSUFFICIENT_FUNDS'
+} as const
+
+export type AutoBidStopReason = (typeof AutoBidStopReason)[keyof typeof AutoBidStopReason]

@@ -37,6 +37,12 @@ enum BidStatus {
   REJECTED
 }
 
+// Por que el motor dejo de competir por una puja automatica (HU-22).
+enum AutoBidStopReason {
+  LIMIT_REACHED
+  INSUFFICIENT_FUNDS
+}
+
 model Room {
   id String @id
   // Nombre con el que el funcionario distingue sus salas y el estudiante las reconoce.
@@ -73,12 +79,15 @@ model Round {
   position        Int
   entries         RoundEntry[]
   bids            Bid[]
+  autoBids        AutoBid[]
   status          RoundStatus @default(SCHEDULED)
   // Precio minimo que fija el funcionario: la primera puja de la ronda debe alcanzarlo.
   startingPrice   Decimal     @default(0) @db.Decimal(18, 2)
   currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
   currentBidderId String?
   nextBidSequence BigInt      @default(0)
+  // Orden de llegada de las pujas automaticas, asignado bajo el bloqueo de la ronda (HU-22).
+  nextAutoBidPriority BigInt  @default(0)
   startedAt       DateTime?
   endsAt          DateTime?
   maximumEndsAt   DateTime?
@@ -99,11 +108,32 @@ model Bid {
   amount    Decimal   @db.Decimal(18, 2)
   sequence  BigInt
   status    BidStatus @default(ACCEPTED)
+  // La hizo el motor en nombre del estudiante, no el estudiante a mano (HU-22).
+  automatic Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   @@unique([roundId, sequence])
   @@index([roundId, status, sequence])
   @@map("bids")
+}
+
+// Limite que un estudiante declara para que el motor puje por el en una ronda (HU-22).
+// No compromete fondos: wallet solo reserva el monto de la puja que el motor llega a hacer.
+model AutoBid {
+  id            String             @id
+  roundId       String
+  round         Round              @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  bidderId      String
+  maximumAmount Decimal            @db.Decimal(18, 2)
+  enabled       Boolean            @default(true)
+  // Desempata limites iguales: gana quien lo declaro primero segun el servidor.
+  priority      BigInt
+  stoppedReason AutoBidStopReason?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  @@unique([roundId, bidderId])
+  @@index([roundId, enabled])
+  @@map("auto_bids")
 }
 
 model RoundEntry {
