@@ -293,7 +293,7 @@ describe('RoomsService', () => {
     expect(enqueued(tx)).toEqual([
       expect.objectContaining({
         eventType: 'auction.round.closed.v1', roundId: 'round-1', currentPrice: '25', currentBidderId: 'alice', closedAt: now.toISOString(),
-        result: 'AWARDED', winnerId: 'alice', winningAmount: '25', roomStatus: 'ACTIVE',
+        result: 'AWARDED', winnerId: 'alice', winningAmount: '25', roomStatus: 'ACTIVE', closeReason: 'EXPIRED',
       }),
       expect.objectContaining({ eventType: 'auction.round.activated.v1', roundId: 'round-2', position: 2, roomStatus: 'ACTIVE' }),
     ]);

@@ -70,6 +70,8 @@ export async function enqueueRoundEvent(
               result: closing.result,
               winnerId: closing.winnerId,
               winningAmount: closing.winnerId ? round.currentPrice.toString() : null,
+              // Campo agregado (HU-24): EXPIRED o BUY_NOW. Los consumidores anteriores lo ignoran.
+              closeReason: closing.closeReason,
             }
           : {}),
       },
