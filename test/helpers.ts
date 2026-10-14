@@ -36,6 +36,8 @@ export class FakeWallet {
   readonly available = new Map<string, number>();
   readonly holds = new Map<string, number>();
   negativeSeen = false;
+  /** Lo que la liquidacion cobro a cada estudiante (`settle`). */
+  readonly debited = new Map<string, number>();
 
   constructor(balances: Record<string, number>, private readonly maxDelayMs = 5) {
     for (const [userId, balance] of Object.entries(balances)) this.available.set(userId, balance);
@@ -68,6 +70,26 @@ export class FakeWallet {
     this.holds.delete(reference);
     this.available.set(userId, (this.available.get(userId) ?? 0) + amount);
     return true;
+  }
+
+  /**
+   * Liquidacion de una ronda cerrada, con las reglas de ecilost-wallet-service al consumir
+   * `auction.round.closed.v1`: al ganador se le cobra `winningAmount` (nunca mas de lo que
+   * tiene reservado) y el excedente vuelve al disponible; cualquier otra reserva de la ronda
+   * vuelve integra. Las reservas liquidadas desaparecen, asi que repetirla no mueve nada.
+   */
+  settle(event: { roundId: string; winnerId: string | null; winningAmount: string | null }) {
+    const prefix = `bid:${event.roundId}:`;
+    for (const [reference, amount] of [...this.holds]) {
+      if (!reference.startsWith(prefix)) continue;
+      const userId = reference.slice(prefix.length);
+      const charge = userId === event.winnerId
+        ? Math.min(amount, event.winningAmount === null ? amount : Number(event.winningAmount))
+        : 0;
+      this.holds.delete(reference);
+      this.available.set(userId, (this.available.get(userId) ?? 0) + amount - charge);
+      if (charge > 0) this.debited.set(userId, (this.debited.get(userId) ?? 0) + charge);
+    }
   }
 
   heldBy(userId: string) {
