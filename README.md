@@ -30,6 +30,13 @@ La próxima integración obligatoria es el contrato RabbitMQ con Catalog que con
 - `PUT /rounds/:roundId/auto-bid` (`{ enabled, maximumAmount }`) declara, cambia o desactiva la puja automática; `GET /rounds/:roundId/auto-bid` la consulta y `GET /rooms/:roomId/state` la incluye en `autoBid`.
 - Detalle de las decisiones en `docs/adr/0001-reloj-del-servidor-y-serializacion-de-pujas.md` y de los eventos en `src/events/README.md`.
 
+## HU-24 — Compra inmediata con ECICoin
+
+- `POST /rooms` acepta en cada ronda un `buyNowPrice` opcional (entero, mayor que `startingPrice`). Sin él, la ronda no ofrece compra inmediata. `GET /rooms/:roomId` y `GET /rooms/:roomId/state` lo publican.
+- `POST /rounds/:roundId/buy-now` (JWT de `STUDENT`, sin cuerpo) compra el objeto de la ronda activa por su `buyNowPrice` mientras las pujas no lo hayan alcanzado. Reserva el precio en Wallet, cierra la ronda a favor del comprador y abre la siguiente. Responde `201 { roundId, roomId, buyerId, price, closedAt, replayed }`. Repetirla tras una compra hecha responde la misma con `replayed: true`, sin volver a reservar.
+- Errores: `403` no admitido en la sala; `404` ronda inexistente; `409` ronda no activa, sin compra inmediata, precio ya alcanzado, saldo insuficiente o compra perdida frente a otra operación; `503` Wallet no respondió (la reserva se deshace).
+- Decisiones, garantías y recuperación en `docs/adr/0002-compra-inmediata.md`.
+
 ## Pruebas
 
 ```bash
