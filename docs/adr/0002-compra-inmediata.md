@@ -2,8 +2,8 @@
 
 ## Estado
 
-Accepted para HU-24. Cubre también los criterios de concurrencia de HU-25 (un único
-adquirente, cierre notificado y reservas de los demás liberadas). Depende de ADR-0001.
+Accepted para HU-24 y HU-25 (un único adquirente, cierre notificado y reservas de los demás
+liberadas; ver la sección "HU-25"). Depende de ADR-0001.
 
 ## Contexto
 
@@ -118,6 +118,26 @@ le debite y que la ronda termine en el acto. Hay tres restricciones:
 
   No se reabre la ronda: una ronda cerrada no vuelve a `ACTIVE`.
 
+## HU-25: adquirente único y cierre notificado
+
+HU-25 no agrega mecanismos en el backend: verifica los de este ADR y cierra dos huecos del
+cliente que dejaban seguir pujando por un objeto ya vendido.
+
+| Criterio | Cómo se cumple | Evidencia |
+|---|---|---|
+| 1. Dos compras simultáneas: una obtiene el objeto; a la otra se la rechaza y no se le debita | Decisión 5: la fila de la ronda decide. Al rechazado se le devuelve la reserva en el acto (`restoreHold`) y la liquidación nunca le cobra. | `test/unique-buyer.int-spec.ts` (criterio 1, cinco repeticiones) y `test/buy-now.int-spec.ts` (cinco compradores) |
+| 2. Todos reciben el cierre al instante y la interfaz deja de aceptar pujas | El cierre va al outbox en la misma transacción. Engagement emite `round.closed` y `room.status` a la sala, y el cliente relee la sala. En el cliente (ecilost-frontend), la puja y la puja automática van a la ronda que se estaba viendo, no a la activa al confirmar, y los diálogos abiertos se cierran si la ronda cambia. Quien no compró ve "Vendido por compra inmediata" a partir de `closeReason`. | Pruebas del cliente: `http-auction.gateway.spec.ts`, `demo-auction.gateway.spec.ts`, `auction-rules.spec.ts` y `test/auctions.spec.tsx` |
+| 3. Los ECICoin reservados de los demás quedan liberados | Decisión 6: la liquidación de Wallet libera toda reserva de la ronda que no sea del comprador, aunque su liberación inmediata se haya perdido. Al comprador se le cobra solo el precio de compra. | `test/unique-buyer.int-spec.ts` (criterio 3), que liquida con el evento real del outbox y con una billetera que imita las reglas de Wallet |
+
+**Hueco corregido en el cliente.** Antes, `placeBid` y `setAutoBid` buscaban la ronda activa
+al confirmar. Si alguien compraba el objeto con el diálogo de puja abierto, la puja caía en el
+objeto siguiente y el servicio la aceptaba si alcanzaba su precio mínimo. Ahora el cliente
+envía la ronda que se estaba viendo; el servicio rechaza con 409 una ronda que ya no está
+`ACTIVE`, tanto en `POST /rounds/:id/bids` como en `PUT /rounds/:id/auto-bid`.
+
+**Latencia observada.** En la prueba E2E local del 2026-10-14, entre el cierre de la ronda y
+la notificación en Engagement pasaron unos 270 ms. Es una observación, no un SLA.
+
 ## Evidencia
 
 - `src/bids/buy-now.service.ts` (`buy`, `closeByPurchase`) y `src/bids/bids.controller.ts`.
@@ -130,3 +150,6 @@ le debite y que la ronda termine en el acto. Hay tres restricciones:
     compradores simultáneos, doble envío del mismo estudiante, compra contra puja y contra
     vencimiento (repetidas con orden aleatorio), encadenado de rondas y rollback ante un
     fallo de la base.
+  - `test/unique-buyer.int-spec.ts` (HU-25), contra PostgreSQL real: dos compradores
+    simultáneos con devolución inmediata de la reserva al rechazado, y liquidación con el
+    evento del outbox que libera las reservas de los demás pujadores.

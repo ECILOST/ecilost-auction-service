@@ -37,6 +37,13 @@ La próxima integración obligatoria es el contrato RabbitMQ con Catalog que con
 - Errores: `403` no admitido en la sala; `404` ronda inexistente; `409` ronda no activa, sin compra inmediata, precio ya alcanzado, saldo insuficiente o compra perdida frente a otra operación; `503` Wallet no respondió (la reserva se deshace).
 - Decisiones, garantías y recuperación en `docs/adr/0002-compra-inmediata.md`.
 
+## HU-25 — Un único adquirente y cierre anticipado notificado
+
+- Solo una compra puede cerrar la ronda: la fila de la ronda decide. A las demás se les responde `409` y se les devuelve la reserva en el acto.
+- El cierre por compra publica `auction.round.closed.v1` con `closeReason: BUY_NOW`. Wallet cobra al comprador y libera las reservas de los demás, y Engagement avisa a la sala. `GET /rooms/:roomId` publica `closeReason` por ronda para que el cliente diga "Vendido por compra inmediata".
+- Una puja o una puja automática sobre una ronda ya cerrada responde `409`. El cliente las envía a la ronda que el estudiante estaba viendo, nunca a "la activa".
+- Cobertura por criterio en `docs/adr/0002-compra-inmediata.md`, sección "HU-25".
+
 ## Pruebas
 
 ```bash
