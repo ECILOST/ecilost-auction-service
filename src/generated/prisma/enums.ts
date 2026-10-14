@@ -44,6 +44,14 @@ export const RoundResult = {
 export type RoundResult = (typeof RoundResult)[keyof typeof RoundResult]
 
 
+export const RoundCloseReason = {
+  EXPIRED: 'EXPIRED',
+  BUY_NOW: 'BUY_NOW'
+} as const
+
+export type RoundCloseReason = (typeof RoundCloseReason)[keyof typeof RoundCloseReason]
+
+
 export const BidStatus = {
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'

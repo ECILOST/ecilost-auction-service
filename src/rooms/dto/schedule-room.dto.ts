@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { ArrayMinSize, IsDateString, IsEnum, IsInt, IsNotEmpty, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
 
 export enum AuctionableKindDto { ITEM = 'ITEM', LOT = 'LOT' }
 
@@ -18,6 +18,15 @@ export class RoundDto {
   @IsInt({ message: 'El precio minimo debe ser un numero entero.' })
   @Min(1, { message: 'El precio minimo debe ser mayor que cero.' })
   startingPrice: number;
+
+  /**
+   * Precio de compra inmediata (HU-24), opcional: sin el, la ronda no ofrece compra inmediata.
+   * Debe superar el precio minimo; esa comparacion la hace el servicio.
+   */
+  @IsOptional()
+  @IsInt({ message: 'El precio de compra inmediata debe ser un numero entero.' })
+  @Min(1, { message: 'El precio de compra inmediata debe ser mayor que cero.' })
+  buyNowPrice?: number;
 }
 
 export class ScheduleRoomDto {

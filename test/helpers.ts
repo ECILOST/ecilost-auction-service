@@ -83,6 +83,7 @@ type RoomSeed = {
     status?: RoundStatus;
     startingPrice?: number;
     currentPrice?: number;
+    buyNowPrice?: number | null;
     currentBidderId?: string | null;
     startedAt?: Date | null;
     endsAt?: Date | null;
@@ -110,6 +111,7 @@ export async function seedRoom(prisma: PrismaService, seed: RoomSeed) {
           status: round.status ?? RoundStatus.SCHEDULED,
           startingPrice: new Prisma.Decimal(round.startingPrice ?? 1000),
           currentPrice: new Prisma.Decimal(round.currentPrice ?? round.startingPrice ?? 1000),
+          buyNowPrice: round.buyNowPrice != null ? new Prisma.Decimal(round.buyNowPrice) : null,
           currentBidderId: round.currentBidderId ?? null,
           startedAt: round.startedAt ?? null,
           endsAt: round.endsAt ?? null,

@@ -47,6 +47,26 @@ describe('RoomsService', () => {
     await expect(service.schedule({ ...valid, rounds: [{ ...valid.rounds[0], startingPrice }] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
     expect(reserve).not.toHaveBeenCalled();
   });
+  it('guarda el precio de compra inmediata de la ronda y lo publica (HU-24)', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { create } } as never, catalog as never);
+    await service.schedule({ ...valid, rounds: [{ ...valid.rounds[0], buyNowPrice: 80000 }] }, 'staff');
+    const { data, select } = create.mock.calls[0][0];
+    expect(data.rounds.create[0].buyNowPrice.toString()).toBe('80000');
+    expect(select.rounds.select).toMatchObject({ buyNowPrice: true, closeReason: true });
+  });
+  it('una ronda sin precio de compra inmediata no la ofrece (HU-24)', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { create } } as never, catalog as never);
+    await service.schedule(valid, 'staff');
+    expect(create.mock.calls[0][0].data.rounds.create[0].buyNowPrice).toBeNull();
+  });
+  it.each([50000, 49000, 60000.5])('rechaza el precio de compra inmediata %s sin reservar en Catalog (HU-24)', async (buyNowPrice) => {
+    const reserve = vi.fn();
+    const service = new RoomsService({ room: { create: vi.fn() } } as never, { reserve } as never);
+    await expect(service.schedule({ ...valid, rounds: [{ ...valid.rounds[0], buyNowPrice }] }, 'staff')).rejects.toBeInstanceOf(BadRequestException);
+    expect(reserve).not.toHaveBeenCalled();
+  });
 
   it('lista las salas indicando si quien consulta ya esta registrado', async () => {
     const findMany = vi.fn().mockResolvedValue([
@@ -273,7 +293,7 @@ describe('RoomsService', () => {
     expect(enqueued(tx)).toEqual([
       expect.objectContaining({
         eventType: 'auction.round.closed.v1', roundId: 'round-1', currentPrice: '25', currentBidderId: 'alice', closedAt: now.toISOString(),
-        result: 'AWARDED', winnerId: 'alice', winningAmount: '25', roomStatus: 'ACTIVE',
+        result: 'AWARDED', winnerId: 'alice', winningAmount: '25', roomStatus: 'ACTIVE', closeReason: 'EXPIRED',
       }),
       expect.objectContaining({ eventType: 'auction.round.activated.v1', roundId: 'round-2', position: 2, roomStatus: 'ACTIVE' }),
     ]);
@@ -285,7 +305,7 @@ describe('RoomsService', () => {
     await scheduler(tx).activateDueRooms(now);
     expect(tx.round.update).toHaveBeenCalledWith({
       where: { id: 'round-1' },
-      data: { status: 'CLOSED', result: 'AWARDED', winnerId: 'alice', closedAt: now },
+      data: { status: 'CLOSED', result: 'AWARDED', winnerId: 'alice', closedAt: now, closeReason: 'EXPIRED' },
     });
   });
   it('una ronda sin pujas queda desierta, sin ganador ni monto a cobrar', async () => {
@@ -294,7 +314,7 @@ describe('RoomsService', () => {
     tx.round.findUnique.mockResolvedValue({ ...roundSnapshot('round-1', 1), currentBidderId: null });
     await scheduler(tx).activateDueRooms(now);
     expect(tx.round.update).toHaveBeenCalledWith(expect.objectContaining({
-      data: { status: 'CLOSED', result: 'DESERTED', winnerId: null, closedAt: now },
+      data: { status: 'CLOSED', result: 'DESERTED', winnerId: null, closedAt: now, closeReason: 'EXPIRED' },
     }));
     expect(enqueued(tx)[0]).toMatchObject({ result: 'DESERTED', winnerId: null, winningAmount: null });
   });
