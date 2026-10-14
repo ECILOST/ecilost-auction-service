@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { BidStatus, Prisma, RoomStatus, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
+import { closeRoundAndAdvance, enqueueRoundEvent, ROUND_EVENT_SELECT, roundTiming } from '../rounds/round-lifecycle.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
 const ROOM_SUMMARY = {
@@ -56,78 +57,6 @@ function toRoomDetail<T extends {
       myHighestBid: bids?.[0]?.amount ?? null,
     })),
   };
-}
-
-const ROUND_DURATION_MS = 3 * 60 * 1000;
-const MAX_ROUND_DURATION_MS = 8 * 60 * 1000;
-
-function roundTiming(startedAt: Date) {
-  return {
-    startedAt,
-    endsAt: new Date(startedAt.getTime() + ROUND_DURATION_MS),
-    maximumEndsAt: new Date(startedAt.getTime() + MAX_ROUND_DURATION_MS),
-  };
-}
-
-type RoundEventSnapshot = {
-  id: string;
-  roomId: string;
-  position: number;
-  currentPrice: Prisma.Decimal;
-  currentBidderId: string | null;
-  startedAt: Date | null;
-  endsAt: Date | null;
-  maximumEndsAt: Date | null;
-  entries: Array<{ kind: string; catalogId: string }>;
-};
-
-const ROUND_EVENT_SELECT = {
-  id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
-  startedAt: true, endsAt: true, maximumEndsAt: true,
-  entries: { select: { kind: true, catalogId: true } },
-} as const;
-
-async function enqueueRoundEvent(
-  tx: Prisma.TransactionClient,
-  eventType: 'auction.round.activated.v1' | 'auction.round.closed.v1',
-  round: RoundEventSnapshot,
-  roomStatus: RoomStatus,
-  closing?: { closedAt: Date; result: RoundResult; winnerId: string | null },
-) {
-  const eventId = randomUUID();
-  await tx.outboxEvent.create({
-    data: {
-      id: eventId,
-      eventType,
-      routingKey: eventType,
-      aggregateId: round.id,
-      payload: {
-        eventId,
-        eventType,
-        occurredAt: new Date().toISOString(),
-        roomId: round.roomId,
-        roundId: round.id,
-        position: round.position,
-        // Estado de la sala tras la transicion: la ultima ronda cerrada deja la sala CLOSED.
-        roomStatus,
-        currentPrice: round.currentPrice.toString(),
-        currentBidderId: round.currentBidderId,
-        startedAt: round.startedAt?.toISOString() ?? null,
-        endsAt: round.endsAt?.toISOString() ?? null,
-        maximumEndsAt: round.maximumEndsAt?.toISOString() ?? null,
-        entries: round.entries.map((entry) => ({ kind: entry.kind, catalogId: entry.catalogId })),
-        // Wallet cobra y libera, y catalog vende o devuelve, a partir de estos tres campos.
-        ...(closing
-          ? {
-              closedAt: closing.closedAt.toISOString(),
-              result: closing.result,
-              winnerId: closing.winnerId,
-              winningAmount: closing.winnerId ? round.currentPrice.toString() : null,
-            }
-          : {}),
-      },
-    },
-  });
 }
 
 @Injectable()
@@ -442,45 +371,10 @@ export class RoomsService {
         const round = await tx.round.findUnique({ where: { id }, select: ROUND_EVENT_SELECT });
         if (!round) continue;
 
-        const result = round.currentBidderId ? RoundResult.AWARDED : RoundResult.DESERTED;
-        await tx.round.update({
-          where: { id },
-          data: { status: RoundStatus.CLOSED, result, winnerId: round.currentBidderId, closedAt: now },
-        });
-        this.logger.log(
-          `room=${round.roomId} round=${round.id} position=${round.position} ACTIVE -> CLOSED result=${result} price=${round.currentPrice.toString()} at=${now.toISOString()}`,
-        );
-
-        const nextRound = await tx.round.findFirst({
-          where: { roomId: round.roomId, position: { gt: round.position }, status: RoundStatus.SCHEDULED },
-          orderBy: { position: 'asc' },
-          select: { id: true },
-        });
-        if (!nextRound) {
-          await tx.room.updateMany({
-            where: { id: round.roomId, status: RoomStatus.ACTIVE },
-            data: { status: RoomStatus.CLOSED },
-          });
-          this.logger.log(`room=${round.roomId} ACTIVE -> CLOSED (ultima ronda) at=${now.toISOString()}`);
-        }
-        await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, nextRound ? RoomStatus.ACTIVE : RoomStatus.CLOSED, {
-          closedAt: now, result, winnerId: round.currentBidderId,
-        });
-        if (!nextRound) continue;
-
-        const activated = await tx.round.updateMany({
-          where: { id: nextRound.id, status: RoundStatus.SCHEDULED },
-          data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
-        });
-        if (activated.count === 1) {
-          const activatedRound = await tx.round.findUnique({ where: { id: nextRound.id }, select: ROUND_EVENT_SELECT });
-          if (activatedRound) {
-            await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound, RoomStatus.ACTIVE);
-            this.logger.log(
-              `room=${activatedRound.roomId} round=${activatedRound.id} position=${activatedRound.position} SCHEDULED -> ACTIVE endsAt=${activatedRound.endsAt?.toISOString()}`,
-            );
-          }
-        }
+        await closeRoundAndAdvance(tx, round, now, {
+          result: round.currentBidderId ? RoundResult.AWARDED : RoundResult.DESERTED,
+          winnerId: round.currentBidderId,
+        }, this.logger);
       }
       return { count };
     });
