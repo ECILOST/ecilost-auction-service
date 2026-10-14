@@ -32,6 +32,13 @@ enum RoundResult {
   DESERTED
 }
 
+// Que cerro la ronda (HU-24): el vencimiento de su reloj o una compra inmediata. No es un
+// estado nuevo: la ronda sigue pasando a CLOSED y el resultado sigue siendo AWARDED/DESERTED.
+enum RoundCloseReason {
+  EXPIRED
+  BUY_NOW
+}
+
 enum BidStatus {
   ACCEPTED
   REJECTED
@@ -84,6 +91,8 @@ model Round {
   // Precio minimo que fija el funcionario: la primera puja de la ronda debe alcanzarlo.
   startingPrice   Decimal     @default(0) @db.Decimal(18, 2)
   currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
+  // Precio de compra inmediata que fija el funcionario (HU-24). Sin precio, la ronda no la ofrece.
+  buyNowPrice     Decimal?    @db.Decimal(18, 2)
   currentBidderId String?
   nextBidSequence BigInt      @default(0)
   // Orden de llegada de las pujas automaticas, asignado bajo el bloqueo de la ronda (HU-22).
@@ -95,6 +104,7 @@ model Round {
   result          RoundResult?
   winnerId        String?
   closedAt        DateTime?
+  closeReason     RoundCloseReason?
   @@unique([roomId, position])
   @@index([status, endsAt])
   @@map("rounds")

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { BidStatus, Prisma, RoomStatus, RoundResult, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoomStatus, RoundCloseReason, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import { closeRoundAndAdvance, enqueueRoundEvent, ROUND_EVENT_SELECT, roundTiming } from '../rounds/round-lifecycle.js';
@@ -21,8 +21,8 @@ const roomDetailSelect = (userId: string) => ({
   rounds: {
     orderBy: { position: 'asc' as const },
     select: {
-      id: true, position: true, status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
-      startedAt: true, endsAt: true, maximumEndsAt: true, result: true, closedAt: true,
+      id: true, position: true, status: true, startingPrice: true, currentPrice: true, buyNowPrice: true, currentBidderId: true,
+      startedAt: true, endsAt: true, maximumEndsAt: true, result: true, closedAt: true, closeReason: true,
       entries: { select: { kind: true, catalogId: true } },
       // Solo la mejor puja aceptada de quien consulta: la de los demas no se publica.
       bids: {
@@ -78,9 +78,14 @@ export class RoomsService {
     if (input.rounds.some((round) => !Number.isInteger(round.startingPrice) || round.startingPrice < 1)) {
       throw new BadRequestException('Cada ronda debe tener un precio minimo entero mayor que cero.');
     }
+    // HU-24: comprar de inmediato debe costar mas que la primera puja posible.
+    if (input.rounds.some((round) => round.buyNowPrice != null && (!Number.isInteger(round.buyNowPrice) || round.buyNowPrice <= round.startingPrice))) {
+      throw new BadRequestException('El precio de compra inmediata debe ser un entero mayor que el precio minimo de la ronda.');
+    }
     const roomId = randomUUID();
     const rounds = input.rounds.map((round, index) => ({
       id: randomUUID(), position: index + 1, entries: round.entries, startingPrice: new Prisma.Decimal(round.startingPrice),
+      buyNowPrice: round.buyNowPrice != null ? new Prisma.Decimal(round.buyNowPrice) : null,
     }));
     // Si catalog no contesta a tiempo no se sabe si reservo: se compensa por si acaso. Si
     // contesto que no, ya deshizo lo suyo en su propia transaccion y no hay nada que liberar.
@@ -104,6 +109,7 @@ export class RoomsService {
             create: rounds.map((round) => ({
               // El precio vigente arranca en el minimo: es lo que ve la sala antes de la primera puja.
               id: round.id, position: round.position, startingPrice: round.startingPrice, currentPrice: round.startingPrice,
+              buyNowPrice: round.buyNowPrice,
               entries: { create: round.entries.map((entry) => ({ id: randomUUID(), kind: entry.kind, catalogId: entry.catalogId })) },
             })),
           },
@@ -264,6 +270,8 @@ export class RoomsService {
             position: true,
             status: true,
             currentPrice: true,
+            // HU-24: la ronda vigente ofrece compra inmediata si tiene precio y las pujas no lo alcanzaron.
+            buyNowPrice: true,
             currentBidderId: true,
             startedAt: true,
             endsAt: true,
@@ -374,6 +382,7 @@ export class RoomsService {
         await closeRoundAndAdvance(tx, round, now, {
           result: round.currentBidderId ? RoundResult.AWARDED : RoundResult.DESERTED,
           winnerId: round.currentBidderId,
+          closeReason: RoundCloseReason.EXPIRED,
         }, this.logger);
       }
       return { count };

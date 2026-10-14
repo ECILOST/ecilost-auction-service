@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Logger } from '@nestjs/common';
-import { Prisma, RoomStatus, RoundResult, RoundStatus } from '../generated/prisma/client.js';
+import { Prisma, RoomStatus, RoundCloseReason, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 
 const ROUND_DURATION_MS = 3 * 60 * 1000;
 const MAX_ROUND_DURATION_MS = 8 * 60 * 1000;
@@ -31,8 +31,8 @@ export const ROUND_EVENT_SELECT = {
   entries: { select: { kind: true, catalogId: true } },
 } as const;
 
-/** Con que resultado se cierra una ronda: quien la gana, si alguien la gana. */
-export type RoundClosing = { result: RoundResult; winnerId: string | null };
+/** Con que resultado se cierra una ronda: quien la gana, si alguien la gana, y que la cerro. */
+export type RoundClosing = { result: RoundResult; winnerId: string | null; closeReason: RoundCloseReason };
 
 export async function enqueueRoundEvent(
   tx: Prisma.TransactionClient,
@@ -96,13 +96,13 @@ export async function closeRoundAndAdvance(
   closing: RoundClosing,
   logger: Logger,
 ) {
-  const { result, winnerId } = closing;
+  const { result, winnerId, closeReason } = closing;
   await tx.round.update({
     where: { id: round.id },
-    data: { status: RoundStatus.CLOSED, result, winnerId, closedAt: now },
+    data: { status: RoundStatus.CLOSED, result, winnerId, closedAt: now, closeReason },
   });
   logger.log(
-    `room=${round.roomId} round=${round.id} position=${round.position} ACTIVE -> CLOSED result=${result} price=${round.currentPrice.toString()} at=${now.toISOString()}`,
+    `room=${round.roomId} round=${round.id} position=${round.position} ACTIVE -> CLOSED result=${result} reason=${closeReason} price=${round.currentPrice.toString()} at=${now.toISOString()}`,
   );
 
   const nextRound = await tx.round.findFirst({
@@ -118,7 +118,7 @@ export async function closeRoundAndAdvance(
     logger.log(`room=${round.roomId} ACTIVE -> CLOSED (ultima ronda) at=${now.toISOString()}`);
   }
   await enqueueRoundEvent(tx, 'auction.round.closed.v1', round, nextRound ? RoomStatus.ACTIVE : RoomStatus.CLOSED, {
-    closedAt: now, result, winnerId,
+    ...closing, closedAt: now,
   });
   if (!nextRound) return;
 
