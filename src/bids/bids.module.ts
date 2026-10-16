@@ -4,4 +4,6 @@ import { AutoBidsService } from './auto-bids.service.js';
 import { BidsService } from './bids.service.js';
 import { BidsController } from './bids.controller.js';
 import { BuyNowService } from './buy-now.service.js';
-@Module({ imports: [EventsModule], controllers: [BidsController], providers: [BidsService, AutoBidsService, BuyNowService], exports: [BidsService, AutoBidsService] }) export class BidsModule {}
+import { DutchService } from './dutch.service.js';
+import { SealedBidsService } from './sealed-bids.service.js';
+@Module({ imports: [EventsModule], controllers: [BidsController], providers: [BidsService, AutoBidsService, BuyNowService, DutchService, SealedBidsService], exports: [BidsService, AutoBidsService] }) export class BidsModule {}
