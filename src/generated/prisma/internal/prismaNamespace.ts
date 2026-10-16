@@ -402,6 +402,7 @@ export const ModelName = {
   Round: 'Round',
   Bid: 'Bid',
   AutoBid: 'AutoBid',
+  SealedBid: 'SealedBid',
   RoundEntry: 'RoundEntry',
   OutboxEvent: 'OutboxEvent'
 } as const
@@ -419,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "room" | "roomParticipant" | "round" | "bid" | "autoBid" | "roundEntry" | "outboxEvent"
+    modelProps: "room" | "roomParticipant" | "round" | "bid" | "autoBid" | "sealedBid" | "roundEntry" | "outboxEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -793,6 +794,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SealedBid: {
+      payload: Prisma.$SealedBidPayload<ExtArgs>
+      fields: Prisma.SealedBidFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SealedBidFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SealedBidFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>
+        }
+        findFirst: {
+          args: Prisma.SealedBidFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SealedBidFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>
+        }
+        findMany: {
+          args: Prisma.SealedBidFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>[]
+        }
+        create: {
+          args: Prisma.SealedBidCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>
+        }
+        createMany: {
+          args: Prisma.SealedBidCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SealedBidCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>[]
+        }
+        delete: {
+          args: Prisma.SealedBidDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>
+        }
+        update: {
+          args: Prisma.SealedBidUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>
+        }
+        deleteMany: {
+          args: Prisma.SealedBidDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SealedBidUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SealedBidUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>[]
+        }
+        upsert: {
+          args: Prisma.SealedBidUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SealedBidPayload>
+        }
+        aggregate: {
+          args: Prisma.SealedBidAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSealedBid>
+        }
+        groupBy: {
+          args: Prisma.SealedBidGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SealedBidGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SealedBidCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SealedBidCountAggregateOutputType> | number
+        }
+      }
+    }
     RoundEntry: {
       payload: Prisma.$RoundEntryPayload<ExtArgs>
       fields: Prisma.RoundEntryFieldRefs
@@ -988,6 +1063,7 @@ export const RoomScalarFieldEnum = {
   admittedCount: 'admittedCount',
   startsAt: 'startsAt',
   scheduledBy: 'scheduledBy',
+  dynamicModesEnabled: 'dynamicModesEnabled',
   createdAt: 'createdAt'
 } as const
 
@@ -1009,6 +1085,13 @@ export const RoundScalarFieldEnum = {
   roomId: 'roomId',
   position: 'position',
   status: 'status',
+  mode: 'mode',
+  modeLockedAt: 'modeLockedAt',
+  wildcardSpins: 'wildcardSpins',
+  dutchStartPrice: 'dutchStartPrice',
+  dutchFloorPrice: 'dutchFloorPrice',
+  dutchStep: 'dutchStep',
+  dutchIntervalSeconds: 'dutchIntervalSeconds',
   startingPrice: 'startingPrice',
   currentPrice: 'currentPrice',
   buyNowPrice: 'buyNowPrice',
@@ -1055,6 +1138,17 @@ export const AutoBidScalarFieldEnum = {
 } as const
 
 export type AutoBidScalarFieldEnum = (typeof AutoBidScalarFieldEnum)[keyof typeof AutoBidScalarFieldEnum]
+
+
+export const SealedBidScalarFieldEnum = {
+  id: 'id',
+  roundId: 'roundId',
+  bidderId: 'bidderId',
+  amount: 'amount',
+  createdAt: 'createdAt'
+} as const
+
+export type SealedBidScalarFieldEnum = (typeof SealedBidScalarFieldEnum)[keyof typeof SealedBidScalarFieldEnum]
 
 
 export const RoundEntryScalarFieldEnum = {
@@ -1186,6 +1280,13 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'RoundStatus'
  */
 export type EnumRoundStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoundStatus'>
@@ -1196,6 +1297,20 @@ export type EnumRoundStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'RoundStatus[]'
  */
 export type ListEnumRoundStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoundStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RoundMode'
+ */
+export type EnumRoundModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoundMode'>
+    
+
+
+/**
+ * Reference to a field of type 'RoundMode[]'
+ */
+export type ListEnumRoundModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoundMode[]'>
     
 
 
@@ -1266,13 +1381,6 @@ export type EnumBidStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
  * Reference to a field of type 'BidStatus[]'
  */
 export type ListEnumBidStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BidStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1487,6 +1595,7 @@ export type GlobalOmitConfig = {
   round?: Prisma.RoundOmit
   bid?: Prisma.BidOmit
   autoBid?: Prisma.AutoBidOmit
+  sealedBid?: Prisma.SealedBidOmit
   roundEntry?: Prisma.RoundEntryOmit
   outboxEvent?: Prisma.OutboxEventOmit
 }

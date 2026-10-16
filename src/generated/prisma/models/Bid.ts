@@ -507,10 +507,6 @@ export type EnumBidStatusFieldUpdateOperationsInput = {
   set?: $Enums.BidStatus
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type BidCreateWithoutRoundInput = {
   id: string
   bidderId: string
