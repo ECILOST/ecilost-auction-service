@@ -1,8 +1,9 @@
 import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Prisma, RoundCloseReason, RoundResult, RoundStatus } from '../generated/prisma/client.js';
+import { Prisma, RoundCloseReason, RoundMode, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletHoldClient } from '../events/wallet-hold.client.js';
 import { closeRoundAndAdvance, ROUND_EVENT_SELECT } from '../rounds/round-lifecycle.js';
+import { acceptsAscendingBids } from '../rounds/round-modes.js';
 import { BidsService, holdReference } from './bids.service.js';
 
 /** Lo que responde una compra inmediata. Sale de lo persistido, nunca de lo que mando el cliente. */
@@ -17,7 +18,7 @@ export type BuyNowResult = {
 };
 
 const PURCHASE_STATE_SELECT = {
-  roomId: true, status: true, currentPrice: true, buyNowPrice: true, winnerId: true, closedAt: true, closeReason: true,
+  roomId: true, status: true, currentPrice: true, buyNowPrice: true, winnerId: true, closedAt: true, closeReason: true, mode: true,
 } as const;
 
 /**
@@ -59,7 +60,8 @@ export class BuyNowService {
       // Todo lo que se puede rechazar se rechaza antes de reservar: una ronda cerrada nunca
       // vuelve a recibir una reserva, que wallet ya no liberaria al liquidar.
       if (state.status !== RoundStatus.ACTIVE) throw new ConflictException('La ronda no esta activa.');
-      if (!state.buyNowPrice) throw new ConflictException('Esta ronda no ofrece compra inmediata.');
+      // ADR-0003: en holandesa y sobre cerrado el precio de compra no aplica.
+      if (!state.buyNowPrice || !acceptsAscendingBids(state.mode)) throw new ConflictException('Esta ronda no ofrece compra inmediata.');
       if (state.currentPrice.gte(state.buyNowPrice)) {
         throw new ConflictException('Las pujas ya alcanzaron el precio de compra inmediata.');
       }
@@ -115,6 +117,7 @@ export class BuyNowService {
           AND "endsAt" > (clock_timestamp() AT TIME ZONE 'UTC')
           AND "buyNowPrice" IS NOT NULL
           AND "currentPrice" < "buyNowPrice"
+          AND mode IN (CAST(${RoundMode.CLASSIC} AS "RoundMode"), CAST(${RoundMode.MYSTERY} AS "RoundMode"))
         FOR UPDATE
       `;
       if (!locked) return null;

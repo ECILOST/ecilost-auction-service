@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { BidStatus, Prisma, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoundMode, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletHoldClient } from '../events/wallet-hold.client.js';
+import { acceptsAscendingBids } from '../rounds/round-modes.js';
 
 export type PlacedBid = {
   id: string;
@@ -96,7 +97,7 @@ export class BidsService {
     const round = await this.prisma.round.findUnique({
       where: { id: roundId },
       select: {
-        status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
+        status: true, startingPrice: true, currentPrice: true, currentBidderId: true, mode: true,
         room: { select: { participants: { where: { userId: bidderId }, select: { id: true }, take: 1 } } },
       },
     });
@@ -104,6 +105,8 @@ export class BidsService {
     // HU-17: solo puja quien se registro antes del inicio. Se comprueba antes de reservar.
     if (round.room.participants.length === 0) throw new ForbiddenException('Debes estar admitido en la sala para pujar.');
     if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('La ronda no esta activa.');
+    // ADR-0003: la holandesa se gana con "Lo quiero" y el sobre cerrado con una puja sellada.
+    if (!acceptsAscendingBids(round.mode)) throw new ConflictException('Esta ronda no se juega con pujas ascendentes.');
     if (bidAmount.lt(minimumBid(round))) throw new ConflictException(`La puja debe ser de al menos ${minimumBid(round).toString()} ECICoin.`);
     const placed = await this.withBidderLock(roundId, bidderId, async () => {
       let accepted: boolean;
@@ -221,6 +224,8 @@ export class BidsService {
         WHERE id = ${roundId}
           AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
           AND "endsAt" > ${now}
+          -- ADR-0003: solo las rondas ascendentes reciben pujas, tambien las del motor automatico.
+          AND mode IN (CAST(${RoundMode.CLASSIC} AS "RoundMode"), CAST(${RoundMode.MYSTERY} AS "RoundMode"))
           ${guard}
         FOR UPDATE
       ), sequenced AS (
