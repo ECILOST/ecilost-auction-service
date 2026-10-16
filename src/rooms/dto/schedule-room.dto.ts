@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { ArrayMinSize, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
 
 export enum AuctionableKindDto { ITEM = 'ITEM', LOT = 'LOT' }
 
@@ -33,6 +33,8 @@ export class ScheduleRoomDto {
   @Transform(trim) @IsString() @IsNotEmpty({ message: 'La sala debe tener un nombre.' }) @MaxLength(80) name: string;
   @IsInt() @Min(1, { message: 'El aforo maximo debe ser mayor que cero.' }) maximumCapacity: number;
   @IsDateString() startsAt: string;
+  /** ADR-0003: activa la ruleta de modalidades desde que se programa. Se puede cambiar despues. */
+  @IsOptional() @IsBoolean() dynamicModes?: boolean;
   @ArrayMinSize(1, { message: 'La sala debe tener al menos una ronda.' })
   @ValidateNested({ each: true }) @Type(() => RoundDto) rounds: RoundDto[];
 }

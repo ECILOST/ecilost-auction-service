@@ -73,22 +73,26 @@ describe('RoomsService', () => {
 
   it('lista las salas indicando si quien consulta ya esta registrado', async () => {
     const findMany = vi.fn().mockResolvedValue([
-      { id: 'a', name: 'Sala A', participants: [{ id: 'p' }], _count: { rounds: 3 } },
-      { id: 'b', name: 'Sala B', participants: [], _count: { rounds: 1 } },
+      { id: 'a', name: 'Sala A', scheduledBy: 'staff', participants: [{ id: 'p' }], _count: { rounds: 3 } },
+      { id: 'b', name: 'Sala B', scheduledBy: 'staff', participants: [], _count: { rounds: 1 } },
     ]);
     const service = new RoomsService({ room: { findMany } } as never, catalog as never);
+    // `scheduledBy` no se publica: solo si quien consulta es el dueño (ADR-0003).
     await expect(service.listRooms('student')).resolves.toEqual([
-      { id: 'a', name: 'Sala A', roundCount: 3, isParticipant: true },
-      { id: 'b', name: 'Sala B', roundCount: 1, isParticipant: false },
+      { id: 'a', name: 'Sala A', roundCount: 3, isParticipant: true, isOwner: false },
+      { id: 'b', name: 'Sala B', roundCount: 1, isParticipant: false, isOwner: false },
     ]);
     expect(findMany.mock.calls[0][0].orderBy).toEqual({ startsAt: 'asc' });
   });
   it('entrega el detalle de la sala con sus rondas', async () => {
-    const round = { id: 'round-1', position: 1, startingPrice: new Prisma.Decimal(50000), entries: [{ kind: 'ITEM', catalogId: item }] };
-    const findUnique = vi.fn().mockResolvedValue({ id: 'room', name: 'Sala A', participants: [], rounds: [{ ...round, currentBidderId: null }] });
+    const round = { id: 'round-1', position: 1, startingPrice: new Prisma.Decimal(50000), entries: [{ kind: 'ITEM', catalogId: item }], mode: 'CLASSIC' };
+    const findUnique = vi.fn().mockResolvedValue({
+      id: 'room', name: 'Sala A', scheduledBy: 'staff', participants: [], rounds: [{ ...round, currentBidderId: null, modeLockedAt: null }],
+    });
     const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     await expect(service.getRoom('room', 'staff')).resolves.toEqual({
-      id: 'room', name: 'Sala A', isParticipant: false, rounds: [{ ...round, hasBids: false, isLeading: false, myHighestBid: null }],
+      id: 'room', name: 'Sala A', isParticipant: false, isOwner: true,
+      rounds: [{ ...round, hasBids: false, isLeading: false, myHighestBid: null, modeLocked: false, dutch: null, sealed: null }],
       serverTime: expect.any(Date),
     });
   });
@@ -390,12 +394,12 @@ describe('RoomsService', () => {
     expect(state.serverTime).toBeInstanceOf(Date);
   });
   it('incluye la puja automatica de quien consulta en la ronda vigente (HU-22)', async () => {
-    const currentRound = { id: 'round-1', position: 1, status: 'ACTIVE', currentPrice: new Prisma.Decimal(25), currentBidderId: 'alice', startedAt: now, endsAt: now, entries: [] };
+    const currentRound = { id: 'round-1', position: 1, status: 'ACTIVE', currentPrice: new Prisma.Decimal(25), currentBidderId: 'alice', startedAt: now, endsAt: now, entries: [], mode: 'CLASSIC' };
     const autoBids = [{ enabled: true, maximumAmount: new Prisma.Decimal(900), stoppedReason: 'LIMIT_REACHED' }];
-    const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [{ id: 'p' }], rounds: [{ ...currentRound, autoBids }] });
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [{ id: 'p' }], rounds: [{ ...currentRound, modeLockedAt: null, autoBids }] });
     const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     const state = await service.getCurrentState('room', 'student');
-    expect(state.currentRound).toEqual(currentRound);
+    expect(state.currentRound).toEqual({ ...currentRound, modeLocked: false, dutch: null, sealed: null });
     expect(state.autoBid).toEqual({ enabled: true, maximumAmount: new Prisma.Decimal(900), stopped: true, stoppedReason: 'LIMIT_REACHED' });
   });
   it('no entrega el estado a quien no fue admitido en la sala', async () => {
