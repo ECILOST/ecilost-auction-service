@@ -1,12 +1,15 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
-import { Prisma } from '../generated/prisma/client.js';
+import { Prisma, RoomStatus } from '../generated/prisma/client.js';
 import { RoomsService } from './rooms.service.js';
 import { AuctionableKindDto } from './dto/schedule-room.dto.js';
 
 const item = '11111111-1111-4111-8111-111111111111';
 const valid = { name: 'Sala de prueba', maximumCapacity: 30, startsAt: '2030-01-01T10:00:00.000Z', rounds: [{ entries: [{ kind: AuctionableKindDto.ITEM, catalogId: item }], startingPrice: 50000 }] };
 const catalog = { reserve: vi.fn().mockResolvedValue(true) };
+/** El reloj de PostgreSQL, que `databaseNow` consulta con `$queryRaw`. */
+const DB_NOW = '2030-01-01T10:00:05.000Z';
+const dbClock = () => vi.fn().mockResolvedValue([{ now: DB_NOW }]);
 
 describe('RoomsService', () => {
   it('crea una sala SCHEDULED con rondas encadenadas', async () => {
@@ -83,7 +86,7 @@ describe('RoomsService', () => {
   it('entrega el detalle de la sala con sus rondas', async () => {
     const round = { id: 'round-1', position: 1, startingPrice: new Prisma.Decimal(50000), entries: [{ kind: 'ITEM', catalogId: item }] };
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', name: 'Sala A', participants: [], rounds: [{ ...round, currentBidderId: null }] });
-    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     await expect(service.getRoom('room', 'staff')).resolves.toEqual({
       id: 'room', name: 'Sala A', isParticipant: false, rounds: [{ ...round, hasBids: false, isLeading: false, myHighestBid: null }],
       serverTime: expect.any(Date),
@@ -95,7 +98,7 @@ describe('RoomsService', () => {
       { id: 'round-2', position: 2, currentBidderId: 'otro', entries: [], bids: [] },
     ];
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', participants: [{ id: 'p' }], rounds });
-    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     const room = await service.getRoom('room', 'student');
     expect(room.isParticipant).toBe(true);
     expect(room.rounds.map(({ hasBids, isLeading, myHighestBid }) => ({ hasBids, isLeading, myHighestBid: myHighestBid?.toString() ?? null }))).toEqual([
@@ -109,6 +112,35 @@ describe('RoomsService', () => {
   it('responde 404 al pedir una sala inexistente', async () => {
     const service = new RoomsService({ room: { findUnique: vi.fn().mockResolvedValue(null) } } as never, catalog as never);
     await expect(service.getRoom('room', 'staff')).rejects.toBeInstanceOf(NotFoundException);
+  });
+  it('la hora del servidor sale del reloj de la base, el mismo que acepta pujas', async () => {
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
+    const room = await service.getRoom('room', 'student');
+    expect(room.serverTime.toISOString()).toBe(DB_NOW);
+  });
+  it('con include=rounds lista cada sala con el mismo detalle que GET /rooms/:id', async () => {
+    const rounds = [{ id: 'round-1', position: 1, currentBidderId: 'student', entries: [{ kind: 'ITEM', catalogId: item }], bids: [{ amount: new Prisma.Decimal(300) }] }];
+    const findMany = vi.fn().mockResolvedValue([{ id: 'a', name: 'Sala A', participants: [{ id: 'p' }], rounds }]);
+    const findUnique = vi.fn().mockResolvedValue({ id: 'a', name: 'Sala A', participants: [{ id: 'p' }], rounds });
+    const service = new RoomsService({ room: { findMany, findUnique }, $queryRaw: dbClock() } as never, catalog as never);
+
+    const [listed] = (await service.listRooms('student', { include: 'rounds', status: [RoomStatus.SCHEDULED, RoomStatus.ACTIVE] })) as Array<{ serverTime: Date }>;
+    const detail = await service.getRoom('a', 'student');
+
+    // Misma forma y mismo select: las dos respuestas no pueden divergir.
+    expect(listed).toEqual(detail);
+    expect(findMany.mock.calls[0][0].select).toEqual(findUnique.mock.calls[0][0].select);
+    expect(findMany.mock.calls[0][0].where).toEqual({ status: { in: ['SCHEDULED', 'ACTIVE'] } });
+    expect(listed.serverTime.toISOString()).toBe(DB_NOW);
+    expect(JSON.stringify(listed)).not.toContain('nextBidSequence');
+  });
+  it('sin include conserva la respuesta de siempre, y status tambien la filtra', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const service = new RoomsService({ room: { findMany } } as never, catalog as never);
+    await service.listRooms('student', { status: [RoomStatus.CLOSED] });
+    expect(findMany.mock.calls[0][0].where).toEqual({ status: { in: ['CLOSED'] } });
+    expect(findMany.mock.calls[0][0].select).toHaveProperty('_count');
   });
   it('convierte la restriccion unica concurrente en conflicto', async () => {
     const outbox = vi.fn();
@@ -352,7 +384,7 @@ describe('RoomsService', () => {
   it('entrega el estado vigente con la hora del servidor para resincronizar al reconectar', async () => {
     const currentRound = { id: 'round-1', position: 1, status: 'ACTIVE', currentPrice: new Prisma.Decimal(25), currentBidderId: 'alice', startedAt: now, endsAt: now, entries: [] };
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [{ id: 'p' }], rounds: [currentRound] });
-    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     const state = await service.getCurrentState('room', 'student');
     expect(state).toMatchObject({ id: 'room', status: 'ACTIVE', currentRound, autoBid: null });
     expect(state.serverTime).toBeInstanceOf(Date);
@@ -361,14 +393,14 @@ describe('RoomsService', () => {
     const currentRound = { id: 'round-1', position: 1, status: 'ACTIVE', currentPrice: new Prisma.Decimal(25), currentBidderId: 'alice', startedAt: now, endsAt: now, entries: [] };
     const autoBids = [{ enabled: true, maximumAmount: new Prisma.Decimal(900), stoppedReason: 'LIMIT_REACHED' }];
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [{ id: 'p' }], rounds: [{ ...currentRound, autoBids }] });
-    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     const state = await service.getCurrentState('room', 'student');
     expect(state.currentRound).toEqual(currentRound);
     expect(state.autoBid).toEqual({ enabled: true, maximumAmount: new Prisma.Decimal(900), stopped: true, stoppedReason: 'LIMIT_REACHED' });
   });
   it('no entrega el estado a quien no fue admitido en la sala', async () => {
     const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', participants: [], rounds: [] });
-    const service = new RoomsService({ room: { findUnique } } as never, catalog as never);
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     await expect(service.getCurrentState('room', 'intruso')).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

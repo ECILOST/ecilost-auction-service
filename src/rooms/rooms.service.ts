@@ -4,6 +4,7 @@ import { BidStatus, Prisma, RoomStatus, RoundCloseReason, RoundResult, RoundStat
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import { closeRoundAndAdvance, enqueueRoundEvent, ROUND_EVENT_SELECT, roundTiming } from '../rounds/round-lifecycle.js';
+import type { ListRoomsQueryDto } from './dto/list-rooms-query.dto.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
 const ROOM_SUMMARY = {
@@ -34,6 +35,8 @@ const roomDetailSelect = (userId: string) => ({
     },
   },
 });
+
+const statusFilter = (status?: RoomStatus[]) => (status?.length ? { status: { in: status } } : undefined);
 
 /**
  * El lider de cada ronda se publica como dos banderas y no como su userId: quien consulta
@@ -227,10 +230,13 @@ export class RoomsService {
 
   /**
    * Salas para descubrir (estudiante) o administrar (funcionario), de la mas proxima a la
-   * mas lejana. Solo datos de la sala: el contenido de cada ronda lo da `getRoom`.
+   * mas lejana. Sin `include`, solo datos de la sala; con `include=rounds`, cada una con el
+   * mismo detalle que `getRoom` (ver `listRoomDetails`). `status` filtra en ambos casos.
    */
-  async listRooms(userId: string) {
+  async listRooms(userId: string, query: ListRoomsQueryDto = {}) {
+    if (query.include === 'rounds') return this.listRoomDetails(userId, query.status);
     const rooms = await this.prisma.room.findMany({
+      where: statusFilter(query.status),
       orderBy: { startsAt: 'asc' },
       select: {
         ...ROOM_SUMMARY,
@@ -250,8 +256,27 @@ export class RoomsService {
   async getRoom(roomId: string, userId: string) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId }, select: roomDetailSelect(userId) });
     if (!room) throw new NotFoundException('La sala no existe.');
-    // `serverTime` deja al cliente corregir su reloj para pintar el contador; nunca decide nada.
-    return { ...toRoomDetail(room, userId), serverTime: new Date() };
+    // `serverTime` deja al cliente corregir su reloj para pintar el contador; nunca decide
+    // nada. Sale del reloj de la base, el mismo que acepta pujas y cierra rondas: con el del
+    // contenedor, un desfase entre los dos dejaba el contador en cero con la ronda abierta.
+    return { ...toRoomDetail(room, userId), serverTime: await this.databaseNow() };
+  }
+
+  /**
+   * Las salas (todas, o las de `status`) con sus rondas, en una sola consulta: el listado de
+   * subastas antes pedia el detalle sala por sala. Usa el mismo `select` y el mismo mapeo que
+   * `getRoom`, para que las dos respuestas no puedan divergir.
+   */
+  private async listRoomDetails(userId: string, status?: RoomStatus[]) {
+    const [rooms, serverTime] = await Promise.all([
+      this.prisma.room.findMany({
+        where: statusFilter(status),
+        orderBy: { startsAt: 'asc' },
+        select: roomDetailSelect(userId),
+      }),
+      this.databaseNow(),
+    ]);
+    return rooms.map((room) => ({ ...toRoomDetail(room, userId), serverTime }));
   }
 
   async getCurrentState(roomId: string, userId: string) {
@@ -288,7 +313,8 @@ export class RoomsService {
 
     const { participants: _participants, rounds, ...roomState } = room;
     const current = rounds[0];
-    if (!current) return { ...roomState, currentRound: null, autoBid: null, serverTime: new Date() };
+    const serverTime = await this.databaseNow();
+    if (!current) return { ...roomState, currentRound: null, autoBid: null, serverTime };
     const { autoBids, ...currentRound } = current;
     const autoBid = autoBids?.[0];
     return {
@@ -297,7 +323,7 @@ export class RoomsService {
       autoBid: autoBid
         ? { enabled: autoBid.enabled, maximumAmount: autoBid.maximumAmount, stopped: autoBid.stoppedReason !== null, stoppedReason: autoBid.stoppedReason }
         : null,
-      serverTime: new Date(),
+      serverTime,
     };
   }
   /**

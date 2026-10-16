@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { JwtAuthGuard } from '../common/jwt-auth.guard.js';
 import { Roles } from '../common/roles.decorator.js';
 import { RolesGuard } from '../common/roles.guard.js';
 import { type Principal, Role } from '../common/principal.js';
+import { ListRoomsQueryDto } from './dto/list-rooms-query.dto.js';
 import { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 import { RoomsService } from './rooms.service.js';
 
@@ -19,7 +20,7 @@ export class RoomsController {
   /** El funcionario administra sus salas; el estudiante las descubre para registrarse. */
   @Get()
   @Roles(Role.STAFF, Role.STUDENT)
-  list(@CurrentUser() principal: Principal) { return this.rooms.listRooms(principal.userId); }
+  list(@CurrentUser() principal: Principal, @Query() query: ListRoomsQueryDto) { return this.rooms.listRooms(principal.userId, query); }
 
   @Get(':roomId')
   @Roles(Role.STAFF, Role.STUDENT)
