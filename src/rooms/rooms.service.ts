@@ -82,23 +82,27 @@ const statusFilter = (status?: RoomStatus[]) => (status?.length ? { status: { in
  * necesita saber si ya hay pujas (para calcular la minima) y si el lider es el, no quien es
  * el otro. La sala la ven tambien quienes no participan.
  */
-function toRoomDetail<T extends {
-  scheduledBy: string;
-  participants: unknown[];
-  rounds: Array<DynamicRoundFields & { currentBidderId: string | null; bids?: Array<{ amount: Prisma.Decimal }> }>;
-}>(
-  { participants, rounds, ...room }: T,
+function toRoomDetail<
+  R extends DynamicRoundFields & { currentBidderId: string | null; bids?: Array<{ amount: Prisma.Decimal }> },
+  T extends { scheduledBy: string; participants: unknown[] },
+>(
+  // La ronda va en su propio parametro de tipo: dentro de `T['rounds']` el resto de la
+  // desestructuracion se queda con la restriccion y pierde los campos del select.
+  { participants, rounds, ...room }: T & { rounds: R[] },
   userId: string,
 ) {
   return {
     ...withOwnership(room, userId),
     isParticipant: participants.length > 0,
-    rounds: rounds.map(({ currentBidderId, bids, ...round }) => ({
-      ...toDynamicRound(round),
-      hasBids: currentBidderId !== null,
-      isLeading: currentBidderId === userId,
-      myHighestBid: bids?.[0]?.amount ?? null,
-    })),
+    rounds: rounds.map((round) => {
+      const { currentBidderId, bids, ...rest } = toDynamicRound(round);
+      return {
+        ...rest,
+        hasBids: currentBidderId !== null,
+        isLeading: currentBidderId === userId,
+        myHighestBid: bids?.[0]?.amount ?? null,
+      };
+    }),
   };
 }
 
