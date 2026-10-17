@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { BidStatus, Prisma, RoundMode, RoundStatus } from '../generated/prisma/client.js';
 import { AutoBidsService } from './auto-bids.service.js';
@@ -122,6 +122,18 @@ describe('AutoBidsService.resolve (HU-22)', () => {
       where: { id: 'auto-a', priority: 1n, stoppedReason: null },
       data: { stoppedReason: 'INSUFFICIENT_FUNDS' },
     });
+  });
+
+  it('si wallet esta ocupada no detiene la puja automatica: deshace por si acaso y el barrido reintenta', async () => {
+    const { service, prisma, wallet, bids } = setup();
+    const autoBids = [{ id: 'auto-a', bidderId: 'alice', maximumAmount: decimal(5000), priority: 1n }];
+    prisma.round.findUnique.mockResolvedValueOnce(activeRound({ autoBids }));
+    wallet.hold.mockRejectedValue(new ServiceUnavailableException('La billetera esta ocupada, intenta de nuevo.'));
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    await service.resolve('round');
+    expect(bids.placeAutomatic).not.toHaveBeenCalled();
+    expect(bids.restoreHold).toHaveBeenCalledWith('round', 'alice', 2100);
+    expect(prisma.autoBid.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: { stoppedReason: 'INSUFFICIENT_FUNDS' } }));
   });
 
   it('si otra puja se adelanta, deshace la reserva y recalcula sobre el estado nuevo', async () => {
