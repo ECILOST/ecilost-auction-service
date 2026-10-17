@@ -67,6 +67,11 @@ export type Bid = Prisma.BidModel
  */
 export type AutoBid = Prisma.AutoBidModel
 /**
+ * Model SealedBid
+ * 
+ */
+export type SealedBid = Prisma.SealedBidModel
+/**
  * Model RoundEntry
  * 
  */

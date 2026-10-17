@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { Prisma, RoundCloseReason, RoundStatus } from '../generated/prisma/client.js';
+import { Prisma, RoundCloseReason, RoundMode, RoundStatus } from '../generated/prisma/client.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BidsService } from './bids.service.js';
 import { BuyNowService } from './buy-now.service.js';
@@ -8,7 +8,7 @@ describe('BuyNowService (HU-24)', () => {
   const closedAt = '2030-01-01T10:01:00.000Z';
   const state = (overrides: Record<string, unknown> = {}) => ({
     roomId: 'room', status: RoundStatus.ACTIVE, currentPrice: new Prisma.Decimal(60000), buyNowPrice: new Prisma.Decimal(80000),
-    winnerId: null, closedAt: null, closeReason: null, ...overrides,
+    winnerId: null, closedAt: null, closeReason: null, mode: RoundMode.CLASSIC, ...overrides,
   });
   const snapshot = () => ({
     id: 'round', roomId: 'room', position: 1, currentPrice: new Prisma.Decimal(80000), currentBidderId: 'bob',

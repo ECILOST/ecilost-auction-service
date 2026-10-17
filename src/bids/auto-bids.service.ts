@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletHoldClient } from '../events/wallet-hold.client.js';
 import { BidsService, holdReference, minimumBid } from './bids.service.js';
 import { minimumToLead, nextAutomaticBid } from './auto-bid.engine.js';
+import { acceptsAscendingBids } from '../rounds/round-modes.js';
 
 /** Tope de pujas por resolucion: el motor converge en una o dos; esto evita un bucle por un bug. */
 const MAX_ENGINE_STEPS = 10;
@@ -48,13 +49,15 @@ export class AutoBidsService {
     const round = await this.prisma.round.findUnique({
       where: { id: roundId },
       select: {
-        status: true, startingPrice: true, currentPrice: true, currentBidderId: true,
+        status: true, startingPrice: true, currentPrice: true, currentBidderId: true, mode: true,
         room: { select: { participants: { where: { userId: bidderId }, select: { id: true }, take: 1 } } },
       },
     });
     if (!round) throw new NotFoundException('La ronda no existe.');
     if (round.room.participants.length === 0) throw new ForbiddenException('Debes estar admitido en la sala para pujar.');
     if (round.status !== RoundStatus.ACTIVE) throw new ConflictException('La ronda no esta activa.');
+    // ADR-0003: la puja automatica solo compite en rondas ascendentes (clasica y lote misterioso).
+    if (!acceptsAscendingBids(round.mode)) throw new ConflictException('Esta ronda no admite puja automatica.');
 
     if (!input.enabled) {
       await this.prisma.autoBid.updateMany({ where: { roundId, bidderId }, data: { enabled: false } });

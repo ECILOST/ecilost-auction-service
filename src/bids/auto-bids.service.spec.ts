@@ -1,12 +1,13 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
-import { BidStatus, Prisma, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoundMode, RoundStatus } from '../generated/prisma/client.js';
 import { AutoBidsService } from './auto-bids.service.js';
 
 const decimal = (value: number) => new Prisma.Decimal(value);
 
 const activeRound = (overrides: Record<string, unknown> = {}) => ({
   status: RoundStatus.ACTIVE, startingPrice: decimal(1000), currentPrice: decimal(2000), currentBidderId: 'bob',
+  mode: RoundMode.CLASSIC,
   room: { participants: [{ id: 'participant' }] },
   autoBids: [] as unknown[],
   ...overrides,
