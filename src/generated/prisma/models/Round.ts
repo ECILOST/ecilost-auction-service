@@ -28,6 +28,11 @@ export type AggregateRound = {
 
 export type RoundAvgAggregateOutputType = {
   position: number | null
+  wildcardSpins: number | null
+  dutchStartPrice: runtime.Decimal | null
+  dutchFloorPrice: runtime.Decimal | null
+  dutchStep: runtime.Decimal | null
+  dutchIntervalSeconds: number | null
   startingPrice: runtime.Decimal | null
   currentPrice: runtime.Decimal | null
   buyNowPrice: runtime.Decimal | null
@@ -37,6 +42,11 @@ export type RoundAvgAggregateOutputType = {
 
 export type RoundSumAggregateOutputType = {
   position: number | null
+  wildcardSpins: number | null
+  dutchStartPrice: runtime.Decimal | null
+  dutchFloorPrice: runtime.Decimal | null
+  dutchStep: runtime.Decimal | null
+  dutchIntervalSeconds: number | null
   startingPrice: runtime.Decimal | null
   currentPrice: runtime.Decimal | null
   buyNowPrice: runtime.Decimal | null
@@ -49,6 +59,13 @@ export type RoundMinAggregateOutputType = {
   roomId: string | null
   position: number | null
   status: $Enums.RoundStatus | null
+  mode: $Enums.RoundMode | null
+  modeLockedAt: Date | null
+  wildcardSpins: number | null
+  dutchStartPrice: runtime.Decimal | null
+  dutchFloorPrice: runtime.Decimal | null
+  dutchStep: runtime.Decimal | null
+  dutchIntervalSeconds: number | null
   startingPrice: runtime.Decimal | null
   currentPrice: runtime.Decimal | null
   buyNowPrice: runtime.Decimal | null
@@ -69,6 +86,13 @@ export type RoundMaxAggregateOutputType = {
   roomId: string | null
   position: number | null
   status: $Enums.RoundStatus | null
+  mode: $Enums.RoundMode | null
+  modeLockedAt: Date | null
+  wildcardSpins: number | null
+  dutchStartPrice: runtime.Decimal | null
+  dutchFloorPrice: runtime.Decimal | null
+  dutchStep: runtime.Decimal | null
+  dutchIntervalSeconds: number | null
   startingPrice: runtime.Decimal | null
   currentPrice: runtime.Decimal | null
   buyNowPrice: runtime.Decimal | null
@@ -89,6 +113,13 @@ export type RoundCountAggregateOutputType = {
   roomId: number
   position: number
   status: number
+  mode: number
+  modeLockedAt: number
+  wildcardSpins: number
+  dutchStartPrice: number
+  dutchFloorPrice: number
+  dutchStep: number
+  dutchIntervalSeconds: number
   startingPrice: number
   currentPrice: number
   buyNowPrice: number
@@ -108,6 +139,11 @@ export type RoundCountAggregateOutputType = {
 
 export type RoundAvgAggregateInputType = {
   position?: true
+  wildcardSpins?: true
+  dutchStartPrice?: true
+  dutchFloorPrice?: true
+  dutchStep?: true
+  dutchIntervalSeconds?: true
   startingPrice?: true
   currentPrice?: true
   buyNowPrice?: true
@@ -117,6 +153,11 @@ export type RoundAvgAggregateInputType = {
 
 export type RoundSumAggregateInputType = {
   position?: true
+  wildcardSpins?: true
+  dutchStartPrice?: true
+  dutchFloorPrice?: true
+  dutchStep?: true
+  dutchIntervalSeconds?: true
   startingPrice?: true
   currentPrice?: true
   buyNowPrice?: true
@@ -129,6 +170,13 @@ export type RoundMinAggregateInputType = {
   roomId?: true
   position?: true
   status?: true
+  mode?: true
+  modeLockedAt?: true
+  wildcardSpins?: true
+  dutchStartPrice?: true
+  dutchFloorPrice?: true
+  dutchStep?: true
+  dutchIntervalSeconds?: true
   startingPrice?: true
   currentPrice?: true
   buyNowPrice?: true
@@ -149,6 +197,13 @@ export type RoundMaxAggregateInputType = {
   roomId?: true
   position?: true
   status?: true
+  mode?: true
+  modeLockedAt?: true
+  wildcardSpins?: true
+  dutchStartPrice?: true
+  dutchFloorPrice?: true
+  dutchStep?: true
+  dutchIntervalSeconds?: true
   startingPrice?: true
   currentPrice?: true
   buyNowPrice?: true
@@ -169,6 +224,13 @@ export type RoundCountAggregateInputType = {
   roomId?: true
   position?: true
   status?: true
+  mode?: true
+  modeLockedAt?: true
+  wildcardSpins?: true
+  dutchStartPrice?: true
+  dutchFloorPrice?: true
+  dutchStep?: true
+  dutchIntervalSeconds?: true
   startingPrice?: true
   currentPrice?: true
   buyNowPrice?: true
@@ -276,6 +338,13 @@ export type RoundGroupByOutputType = {
   roomId: string
   position: number
   status: $Enums.RoundStatus
+  mode: $Enums.RoundMode
+  modeLockedAt: Date | null
+  wildcardSpins: number
+  dutchStartPrice: runtime.Decimal | null
+  dutchFloorPrice: runtime.Decimal | null
+  dutchStep: runtime.Decimal | null
+  dutchIntervalSeconds: number | null
   startingPrice: runtime.Decimal
   currentPrice: runtime.Decimal
   buyNowPrice: runtime.Decimal | null
@@ -319,6 +388,13 @@ export type RoundWhereInput = {
   roomId?: Prisma.StringFilter<"Round"> | string
   position?: Prisma.IntFilter<"Round"> | number
   status?: Prisma.EnumRoundStatusFilter<"Round"> | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFilter<"Round"> | $Enums.RoundMode
+  modeLockedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
+  wildcardSpins?: Prisma.IntFilter<"Round"> | number
+  dutchStartPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.IntNullableFilter<"Round"> | number | null
   startingPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -336,6 +412,7 @@ export type RoundWhereInput = {
   entries?: Prisma.RoundEntryListRelationFilter
   bids?: Prisma.BidListRelationFilter
   autoBids?: Prisma.AutoBidListRelationFilter
+  sealedBids?: Prisma.SealedBidListRelationFilter
 }
 
 export type RoundOrderByWithRelationInput = {
@@ -343,6 +420,13 @@ export type RoundOrderByWithRelationInput = {
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  mode?: Prisma.SortOrder
+  modeLockedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrderInput | Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrderInput | Prisma.SortOrder
+  dutchStep?: Prisma.SortOrderInput | Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrderInput | Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -360,6 +444,7 @@ export type RoundOrderByWithRelationInput = {
   entries?: Prisma.RoundEntryOrderByRelationAggregateInput
   bids?: Prisma.BidOrderByRelationAggregateInput
   autoBids?: Prisma.AutoBidOrderByRelationAggregateInput
+  sealedBids?: Prisma.SealedBidOrderByRelationAggregateInput
 }
 
 export type RoundWhereUniqueInput = Prisma.AtLeast<{
@@ -371,6 +456,13 @@ export type RoundWhereUniqueInput = Prisma.AtLeast<{
   roomId?: Prisma.StringFilter<"Round"> | string
   position?: Prisma.IntFilter<"Round"> | number
   status?: Prisma.EnumRoundStatusFilter<"Round"> | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFilter<"Round"> | $Enums.RoundMode
+  modeLockedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
+  wildcardSpins?: Prisma.IntFilter<"Round"> | number
+  dutchStartPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.IntNullableFilter<"Round"> | number | null
   startingPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -388,6 +480,7 @@ export type RoundWhereUniqueInput = Prisma.AtLeast<{
   entries?: Prisma.RoundEntryListRelationFilter
   bids?: Prisma.BidListRelationFilter
   autoBids?: Prisma.AutoBidListRelationFilter
+  sealedBids?: Prisma.SealedBidListRelationFilter
 }, "id" | "roomId_position">
 
 export type RoundOrderByWithAggregationInput = {
@@ -395,6 +488,13 @@ export type RoundOrderByWithAggregationInput = {
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  mode?: Prisma.SortOrder
+  modeLockedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrderInput | Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrderInput | Prisma.SortOrder
+  dutchStep?: Prisma.SortOrderInput | Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrderInput | Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -423,6 +523,13 @@ export type RoundScalarWhereWithAggregatesInput = {
   roomId?: Prisma.StringWithAggregatesFilter<"Round"> | string
   position?: Prisma.IntWithAggregatesFilter<"Round"> | number
   status?: Prisma.EnumRoundStatusWithAggregatesFilter<"Round"> | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeWithAggregatesFilter<"Round"> | $Enums.RoundMode
+  modeLockedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Round"> | Date | string | null
+  wildcardSpins?: Prisma.IntWithAggregatesFilter<"Round"> | number
+  dutchStartPrice?: Prisma.DecimalNullableWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.DecimalNullableWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.DecimalNullableWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.IntNullableWithAggregatesFilter<"Round"> | number | null
   startingPrice?: Prisma.DecimalWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.DecimalNullableWithAggregatesFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -442,6 +549,13 @@ export type RoundCreateInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -459,6 +573,7 @@ export type RoundCreateInput = {
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateInput = {
@@ -466,6 +581,13 @@ export type RoundUncheckedCreateInput = {
   roomId: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -482,12 +604,20 @@ export type RoundUncheckedCreateInput = {
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -505,6 +635,7 @@ export type RoundUpdateInput = {
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateInput = {
@@ -512,6 +643,13 @@ export type RoundUncheckedUpdateInput = {
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -528,6 +666,7 @@ export type RoundUncheckedUpdateInput = {
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateManyInput = {
@@ -535,6 +674,13 @@ export type RoundCreateManyInput = {
   roomId: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -554,6 +700,13 @@ export type RoundUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -574,6 +727,13 @@ export type RoundUncheckedUpdateManyInput = {
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -609,6 +769,13 @@ export type RoundCountOrderByAggregateInput = {
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  mode?: Prisma.SortOrder
+  modeLockedAt?: Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrder
+  dutchStep?: Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrder
@@ -626,6 +793,11 @@ export type RoundCountOrderByAggregateInput = {
 
 export type RoundAvgOrderByAggregateInput = {
   position?: Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrder
+  dutchStep?: Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrder
@@ -638,6 +810,13 @@ export type RoundMaxOrderByAggregateInput = {
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  mode?: Prisma.SortOrder
+  modeLockedAt?: Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrder
+  dutchStep?: Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrder
@@ -658,6 +837,13 @@ export type RoundMinOrderByAggregateInput = {
   roomId?: Prisma.SortOrder
   position?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  mode?: Prisma.SortOrder
+  modeLockedAt?: Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrder
+  dutchStep?: Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrder
@@ -675,6 +861,11 @@ export type RoundMinOrderByAggregateInput = {
 
 export type RoundSumOrderByAggregateInput = {
   position?: Prisma.SortOrder
+  wildcardSpins?: Prisma.SortOrder
+  dutchStartPrice?: Prisma.SortOrder
+  dutchFloorPrice?: Prisma.SortOrder
+  dutchStep?: Prisma.SortOrder
+  dutchIntervalSeconds?: Prisma.SortOrder
   startingPrice?: Prisma.SortOrder
   currentPrice?: Prisma.SortOrder
   buyNowPrice?: Prisma.SortOrder
@@ -733,16 +924,32 @@ export type EnumRoundStatusFieldUpdateOperationsInput = {
   set?: $Enums.RoundStatus
 }
 
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
+export type EnumRoundModeFieldUpdateOperationsInput = {
+  set?: $Enums.RoundMode
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
+export type NullableDecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
   decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
   multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type NullableDecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type DecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
   increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
   decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
   multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -759,10 +966,6 @@ export type BigIntFieldUpdateOperationsInput = {
   decrement?: bigint | number
   multiply?: bigint | number
   divide?: bigint | number
-}
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
 }
 
 export type NullableEnumRoundResultFieldUpdateOperationsInput = {
@@ -801,6 +1004,20 @@ export type RoundUpdateOneRequiredWithoutAutoBidsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RoundUpdateToOneWithWhereWithoutAutoBidsInput, Prisma.RoundUpdateWithoutAutoBidsInput>, Prisma.RoundUncheckedUpdateWithoutAutoBidsInput>
 }
 
+export type RoundCreateNestedOneWithoutSealedBidsInput = {
+  create?: Prisma.XOR<Prisma.RoundCreateWithoutSealedBidsInput, Prisma.RoundUncheckedCreateWithoutSealedBidsInput>
+  connectOrCreate?: Prisma.RoundCreateOrConnectWithoutSealedBidsInput
+  connect?: Prisma.RoundWhereUniqueInput
+}
+
+export type RoundUpdateOneRequiredWithoutSealedBidsNestedInput = {
+  create?: Prisma.XOR<Prisma.RoundCreateWithoutSealedBidsInput, Prisma.RoundUncheckedCreateWithoutSealedBidsInput>
+  connectOrCreate?: Prisma.RoundCreateOrConnectWithoutSealedBidsInput
+  upsert?: Prisma.RoundUpsertWithoutSealedBidsInput
+  connect?: Prisma.RoundWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RoundUpdateToOneWithWhereWithoutSealedBidsInput, Prisma.RoundUpdateWithoutSealedBidsInput>, Prisma.RoundUncheckedUpdateWithoutSealedBidsInput>
+}
+
 export type RoundCreateNestedOneWithoutEntriesInput = {
   create?: Prisma.XOR<Prisma.RoundCreateWithoutEntriesInput, Prisma.RoundUncheckedCreateWithoutEntriesInput>
   connectOrCreate?: Prisma.RoundCreateOrConnectWithoutEntriesInput
@@ -819,6 +1036,13 @@ export type RoundCreateWithoutRoomInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -835,12 +1059,20 @@ export type RoundCreateWithoutRoomInput = {
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutRoomInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -857,6 +1089,7 @@ export type RoundUncheckedCreateWithoutRoomInput = {
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutRoomInput = {
@@ -893,6 +1126,13 @@ export type RoundScalarWhereInput = {
   roomId?: Prisma.StringFilter<"Round"> | string
   position?: Prisma.IntFilter<"Round"> | number
   status?: Prisma.EnumRoundStatusFilter<"Round"> | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFilter<"Round"> | $Enums.RoundMode
+  modeLockedAt?: Prisma.DateTimeNullableFilter<"Round"> | Date | string | null
+  wildcardSpins?: Prisma.IntFilter<"Round"> | number
+  dutchStartPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.IntNullableFilter<"Round"> | number | null
   startingPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.DecimalNullableFilter<"Round"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -912,6 +1152,13 @@ export type RoundCreateWithoutBidsInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -928,6 +1175,7 @@ export type RoundCreateWithoutBidsInput = {
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutBidsInput = {
@@ -935,6 +1183,13 @@ export type RoundUncheckedCreateWithoutBidsInput = {
   roomId: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -950,6 +1205,7 @@ export type RoundUncheckedCreateWithoutBidsInput = {
   closeReason?: $Enums.RoundCloseReason | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutBidsInput = {
@@ -972,6 +1228,13 @@ export type RoundUpdateWithoutBidsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -988,6 +1251,7 @@ export type RoundUpdateWithoutBidsInput = {
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutBidsInput = {
@@ -995,6 +1259,13 @@ export type RoundUncheckedUpdateWithoutBidsInput = {
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1010,12 +1281,20 @@ export type RoundUncheckedUpdateWithoutBidsInput = {
   closeReason?: Prisma.NullableEnumRoundCloseReasonFieldUpdateOperationsInput | $Enums.RoundCloseReason | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateWithoutAutoBidsInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1032,6 +1311,7 @@ export type RoundCreateWithoutAutoBidsInput = {
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutAutoBidsInput = {
@@ -1039,6 +1319,13 @@ export type RoundUncheckedCreateWithoutAutoBidsInput = {
   roomId: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1054,6 +1341,7 @@ export type RoundUncheckedCreateWithoutAutoBidsInput = {
   closeReason?: $Enums.RoundCloseReason | null
   entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutAutoBidsInput = {
@@ -1076,6 +1364,13 @@ export type RoundUpdateWithoutAutoBidsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1092,6 +1387,7 @@ export type RoundUpdateWithoutAutoBidsInput = {
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutAutoBidsInput = {
@@ -1099,6 +1395,13 @@ export type RoundUncheckedUpdateWithoutAutoBidsInput = {
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1114,12 +1417,156 @@ export type RoundUncheckedUpdateWithoutAutoBidsInput = {
   closeReason?: Prisma.NullableEnumRoundCloseReasonFieldUpdateOperationsInput | $Enums.RoundCloseReason | null
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUncheckedUpdateManyWithoutRoundNestedInput
+}
+
+export type RoundCreateWithoutSealedBidsInput = {
+  id: string
+  position: number
+  status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
+  startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currentBidderId?: string | null
+  nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
+  startedAt?: Date | string | null
+  endsAt?: Date | string | null
+  maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
+  closeReason?: $Enums.RoundCloseReason | null
+  room: Prisma.RoomCreateNestedOneWithoutRoundsInput
+  entries?: Prisma.RoundEntryCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
+}
+
+export type RoundUncheckedCreateWithoutSealedBidsInput = {
+  id: string
+  roomId: string
+  position: number
+  status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
+  startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currentBidderId?: string | null
+  nextBidSequence?: bigint | number
+  nextAutoBidPriority?: bigint | number
+  startedAt?: Date | string | null
+  endsAt?: Date | string | null
+  maximumEndsAt?: Date | string | null
+  result?: $Enums.RoundResult | null
+  winnerId?: string | null
+  closedAt?: Date | string | null
+  closeReason?: $Enums.RoundCloseReason | null
+  entries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutRoundInput
+  bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
+  autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
+}
+
+export type RoundCreateOrConnectWithoutSealedBidsInput = {
+  where: Prisma.RoundWhereUniqueInput
+  create: Prisma.XOR<Prisma.RoundCreateWithoutSealedBidsInput, Prisma.RoundUncheckedCreateWithoutSealedBidsInput>
+}
+
+export type RoundUpsertWithoutSealedBidsInput = {
+  update: Prisma.XOR<Prisma.RoundUpdateWithoutSealedBidsInput, Prisma.RoundUncheckedUpdateWithoutSealedBidsInput>
+  create: Prisma.XOR<Prisma.RoundCreateWithoutSealedBidsInput, Prisma.RoundUncheckedCreateWithoutSealedBidsInput>
+  where?: Prisma.RoundWhereInput
+}
+
+export type RoundUpdateToOneWithWhereWithoutSealedBidsInput = {
+  where?: Prisma.RoundWhereInput
+  data: Prisma.XOR<Prisma.RoundUpdateWithoutSealedBidsInput, Prisma.RoundUncheckedUpdateWithoutSealedBidsInput>
+}
+
+export type RoundUpdateWithoutSealedBidsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  closeReason?: Prisma.NullableEnumRoundCloseReasonFieldUpdateOperationsInput | $Enums.RoundCloseReason | null
+  room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
+  entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
+}
+
+export type RoundUncheckedUpdateWithoutSealedBidsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  roomId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currentBidderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nextBidSequence?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  nextAutoBidPriority?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  maximumEndsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableEnumRoundResultFieldUpdateOperationsInput | $Enums.RoundResult | null
+  winnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  closeReason?: Prisma.NullableEnumRoundCloseReasonFieldUpdateOperationsInput | $Enums.RoundCloseReason | null
+  entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
+  bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
+  autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateWithoutEntriesInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1136,6 +1583,7 @@ export type RoundCreateWithoutEntriesInput = {
   room: Prisma.RoomCreateNestedOneWithoutRoundsInput
   bids?: Prisma.BidCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidCreateNestedManyWithoutRoundInput
 }
 
 export type RoundUncheckedCreateWithoutEntriesInput = {
@@ -1143,6 +1591,13 @@ export type RoundUncheckedCreateWithoutEntriesInput = {
   roomId: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1158,6 +1613,7 @@ export type RoundUncheckedCreateWithoutEntriesInput = {
   closeReason?: $Enums.RoundCloseReason | null
   bids?: Prisma.BidUncheckedCreateNestedManyWithoutRoundInput
   autoBids?: Prisma.AutoBidUncheckedCreateNestedManyWithoutRoundInput
+  sealedBids?: Prisma.SealedBidUncheckedCreateNestedManyWithoutRoundInput
 }
 
 export type RoundCreateOrConnectWithoutEntriesInput = {
@@ -1180,6 +1636,13 @@ export type RoundUpdateWithoutEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1196,6 +1659,7 @@ export type RoundUpdateWithoutEntriesInput = {
   room?: Prisma.RoomUpdateOneRequiredWithoutRoundsNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutEntriesInput = {
@@ -1203,6 +1667,13 @@ export type RoundUncheckedUpdateWithoutEntriesInput = {
   roomId?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1218,12 +1689,20 @@ export type RoundUncheckedUpdateWithoutEntriesInput = {
   closeReason?: Prisma.NullableEnumRoundCloseReasonFieldUpdateOperationsInput | $Enums.RoundCloseReason | null
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundCreateManyRoomInput = {
   id: string
   position: number
   status?: $Enums.RoundStatus
+  mode?: $Enums.RoundMode
+  modeLockedAt?: Date | string | null
+  wildcardSpins?: number
+  dutchStartPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: number | null
   startingPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1243,6 +1722,13 @@ export type RoundUpdateWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1259,12 +1745,20 @@ export type RoundUpdateWithoutRoomInput = {
   entries?: Prisma.RoundEntryUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1281,12 +1775,20 @@ export type RoundUncheckedUpdateWithoutRoomInput = {
   entries?: Prisma.RoundEntryUncheckedUpdateManyWithoutRoundNestedInput
   bids?: Prisma.BidUncheckedUpdateManyWithoutRoundNestedInput
   autoBids?: Prisma.AutoBidUncheckedUpdateManyWithoutRoundNestedInput
+  sealedBids?: Prisma.SealedBidUncheckedUpdateManyWithoutRoundNestedInput
 }
 
 export type RoundUncheckedUpdateManyWithoutRoomInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumRoundStatusFieldUpdateOperationsInput | $Enums.RoundStatus
+  mode?: Prisma.EnumRoundModeFieldUpdateOperationsInput | $Enums.RoundMode
+  modeLockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  wildcardSpins?: Prisma.IntFieldUpdateOperationsInput | number
+  dutchStartPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchFloorPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchStep?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dutchIntervalSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   startingPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currentPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   buyNowPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
@@ -1311,12 +1813,14 @@ export type RoundCountOutputType = {
   entries: number
   bids: number
   autoBids: number
+  sealedBids: number
 }
 
 export type RoundCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entries?: boolean | RoundCountOutputTypeCountEntriesArgs
   bids?: boolean | RoundCountOutputTypeCountBidsArgs
   autoBids?: boolean | RoundCountOutputTypeCountAutoBidsArgs
+  sealedBids?: boolean | RoundCountOutputTypeCountSealedBidsArgs
 }
 
 /**
@@ -1350,12 +1854,26 @@ export type RoundCountOutputTypeCountAutoBidsArgs<ExtArgs extends runtime.Types.
   where?: Prisma.AutoBidWhereInput
 }
 
+/**
+ * RoundCountOutputType without action
+ */
+export type RoundCountOutputTypeCountSealedBidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SealedBidWhereInput
+}
+
 
 export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   roomId?: boolean
   position?: boolean
   status?: boolean
+  mode?: boolean
+  modeLockedAt?: boolean
+  wildcardSpins?: boolean
+  dutchStartPrice?: boolean
+  dutchFloorPrice?: boolean
+  dutchStep?: boolean
+  dutchIntervalSeconds?: boolean
   startingPrice?: boolean
   currentPrice?: boolean
   buyNowPrice?: boolean
@@ -1373,6 +1891,7 @@ export type RoundSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
   bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
   autoBids?: boolean | Prisma.Round$autoBidsArgs<ExtArgs>
+  sealedBids?: boolean | Prisma.Round$sealedBidsArgs<ExtArgs>
   _count?: boolean | Prisma.RoundCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["round"]>
 
@@ -1381,6 +1900,13 @@ export type RoundSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   roomId?: boolean
   position?: boolean
   status?: boolean
+  mode?: boolean
+  modeLockedAt?: boolean
+  wildcardSpins?: boolean
+  dutchStartPrice?: boolean
+  dutchFloorPrice?: boolean
+  dutchStep?: boolean
+  dutchIntervalSeconds?: boolean
   startingPrice?: boolean
   currentPrice?: boolean
   buyNowPrice?: boolean
@@ -1402,6 +1928,13 @@ export type RoundSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   roomId?: boolean
   position?: boolean
   status?: boolean
+  mode?: boolean
+  modeLockedAt?: boolean
+  wildcardSpins?: boolean
+  dutchStartPrice?: boolean
+  dutchFloorPrice?: boolean
+  dutchStep?: boolean
+  dutchIntervalSeconds?: boolean
   startingPrice?: boolean
   currentPrice?: boolean
   buyNowPrice?: boolean
@@ -1423,6 +1956,13 @@ export type RoundSelectScalar = {
   roomId?: boolean
   position?: boolean
   status?: boolean
+  mode?: boolean
+  modeLockedAt?: boolean
+  wildcardSpins?: boolean
+  dutchStartPrice?: boolean
+  dutchFloorPrice?: boolean
+  dutchStep?: boolean
+  dutchIntervalSeconds?: boolean
   startingPrice?: boolean
   currentPrice?: boolean
   buyNowPrice?: boolean
@@ -1438,12 +1978,13 @@ export type RoundSelectScalar = {
   closeReason?: boolean
 }
 
-export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status" | "startingPrice" | "currentPrice" | "buyNowPrice" | "currentBidderId" | "nextBidSequence" | "nextAutoBidPriority" | "startedAt" | "endsAt" | "maximumEndsAt" | "result" | "winnerId" | "closedAt" | "closeReason", ExtArgs["result"]["round"]>
+export type RoundOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "roomId" | "position" | "status" | "mode" | "modeLockedAt" | "wildcardSpins" | "dutchStartPrice" | "dutchFloorPrice" | "dutchStep" | "dutchIntervalSeconds" | "startingPrice" | "currentPrice" | "buyNowPrice" | "currentBidderId" | "nextBidSequence" | "nextAutoBidPriority" | "startedAt" | "endsAt" | "maximumEndsAt" | "result" | "winnerId" | "closedAt" | "closeReason", ExtArgs["result"]["round"]>
 export type RoundInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   room?: boolean | Prisma.RoomDefaultArgs<ExtArgs>
   entries?: boolean | Prisma.Round$entriesArgs<ExtArgs>
   bids?: boolean | Prisma.Round$bidsArgs<ExtArgs>
   autoBids?: boolean | Prisma.Round$autoBidsArgs<ExtArgs>
+  sealedBids?: boolean | Prisma.Round$sealedBidsArgs<ExtArgs>
   _count?: boolean | Prisma.RoundCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoundIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1460,12 +2001,20 @@ export type $RoundPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     entries: Prisma.$RoundEntryPayload<ExtArgs>[]
     bids: Prisma.$BidPayload<ExtArgs>[]
     autoBids: Prisma.$AutoBidPayload<ExtArgs>[]
+    sealedBids: Prisma.$SealedBidPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     roomId: string
     position: number
     status: $Enums.RoundStatus
+    mode: $Enums.RoundMode
+    modeLockedAt: Date | null
+    wildcardSpins: number
+    dutchStartPrice: runtime.Decimal | null
+    dutchFloorPrice: runtime.Decimal | null
+    dutchStep: runtime.Decimal | null
+    dutchIntervalSeconds: number | null
     startingPrice: runtime.Decimal
     currentPrice: runtime.Decimal
     buyNowPrice: runtime.Decimal | null
@@ -1877,6 +2426,7 @@ export interface Prisma__RoundClient<T, Null = never, ExtArgs extends runtime.Ty
   entries<T extends Prisma.Round$entriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoundEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   bids<T extends Prisma.Round$bidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$bidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   autoBids<T extends Prisma.Round$autoBidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$autoBidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AutoBidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sealedBids<T extends Prisma.Round$sealedBidsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Round$sealedBidsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SealedBidPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1910,6 +2460,13 @@ export interface RoundFieldRefs {
   readonly roomId: Prisma.FieldRef<"Round", 'String'>
   readonly position: Prisma.FieldRef<"Round", 'Int'>
   readonly status: Prisma.FieldRef<"Round", 'RoundStatus'>
+  readonly mode: Prisma.FieldRef<"Round", 'RoundMode'>
+  readonly modeLockedAt: Prisma.FieldRef<"Round", 'DateTime'>
+  readonly wildcardSpins: Prisma.FieldRef<"Round", 'Int'>
+  readonly dutchStartPrice: Prisma.FieldRef<"Round", 'Decimal'>
+  readonly dutchFloorPrice: Prisma.FieldRef<"Round", 'Decimal'>
+  readonly dutchStep: Prisma.FieldRef<"Round", 'Decimal'>
+  readonly dutchIntervalSeconds: Prisma.FieldRef<"Round", 'Int'>
   readonly startingPrice: Prisma.FieldRef<"Round", 'Decimal'>
   readonly currentPrice: Prisma.FieldRef<"Round", 'Decimal'>
   readonly buyNowPrice: Prisma.FieldRef<"Round", 'Decimal'>
@@ -2393,6 +2950,30 @@ export type Round$autoBidsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.AutoBidScalarFieldEnum | Prisma.AutoBidScalarFieldEnum[]
+}
+
+/**
+ * Round.sealedBids
+ */
+export type Round$sealedBidsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SealedBid
+   */
+  select?: Prisma.SealedBidSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SealedBid
+   */
+  omit?: Prisma.SealedBidOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SealedBidInclude<ExtArgs> | null
+  where?: Prisma.SealedBidWhereInput
+  orderBy?: Prisma.SealedBidOrderByWithRelationInput | Prisma.SealedBidOrderByWithRelationInput[]
+  cursor?: Prisma.SealedBidWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SealedBidScalarFieldEnum | Prisma.SealedBidScalarFieldEnum[]
 }
 
 /**

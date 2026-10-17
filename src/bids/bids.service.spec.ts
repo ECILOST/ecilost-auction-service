@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
-import { BidStatus, Prisma, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoundMode, RoundStatus } from '../generated/prisma/client.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BidsService, minimumBid } from './bids.service.js';
 
@@ -8,6 +8,7 @@ describe('BidsService', () => {
   const inTransaction = (work: (tx: unknown) => unknown) => work({ $queryRaw: vi.fn() });
   const activeRound = (currentPrice = 1000, currentBidderId: string | null = 'alice', startingPrice = 500) => ({
     id: 'round', status: RoundStatus.ACTIVE, startingPrice: new Prisma.Decimal(startingPrice), currentPrice: new Prisma.Decimal(currentPrice), currentBidderId,
+    mode: RoundMode.CLASSIC,
     room: { participants: [{ id: 'participant' }] },
   });
   const placed = (previousBidderId: string | null = 'alice', previousPrice = 1000, status: BidStatus = BidStatus.ACCEPTED) => [{ id: 'bid', roundId: 'round', bidderId: 'bob', amount: new Prisma.Decimal(1100), sequence: 1n, status, previousBidderId, previousPrice: previousBidderId ? new Prisma.Decimal(previousPrice) : null, endsAt: '2030-01-01T10:03:00.000Z', extended: false }];

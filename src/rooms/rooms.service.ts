@@ -1,15 +1,22 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { BidStatus, Prisma, RoomStatus, RoundCloseReason, RoundResult, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoomStatus, RoundCloseReason, RoundMode, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
-import { closeRoundAndAdvance, enqueueRoundEvent, ROUND_EVENT_SELECT, roundTiming } from '../rounds/round-lifecycle.js';
+import { closeRoundAndAdvance, enqueueRoundEvent, resolveSealedRound, ROUND_EVENT_SELECT, roundTiming } from '../rounds/round-lifecycle.js';
 import type { ListRoomsQueryDto } from './dto/list-rooms-query.dto.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
 const ROOM_SUMMARY = {
   id: true, name: true, status: true, startsAt: true, maximumCapacity: true, admittedCount: true, createdAt: true,
+  // ADR-0003. `scheduledBy` solo se lee para calcular `isOwner`: el id del funcionario no se publica.
+  dynamicModesEnabled: true, scheduledBy: true,
 } as const;
+
+/** Quien consulta es el dueño de la sala, sin publicar quien es el dueño. */
+function withOwnership<T extends { scheduledBy: string }>({ scheduledBy, ...room }: T, userId: string) {
+  return { ...room, isOwner: scheduledBy === userId };
+}
 
 /**
  * Lo que se publica de una sala con sus rondas. Es un `select` explicito y no un `include`
@@ -32,9 +39,41 @@ const roomDetailSelect = (userId: string) => ({
         take: 1,
         select: { amount: true },
       },
+      // ADR-0003: el modo de la ronda, y del sobre cerrado solo el de quien consulta y el conteo.
+      mode: true, modeLockedAt: true, wildcardSpins: true,
+      dutchStartPrice: true, dutchFloorPrice: true, dutchStep: true, dutchIntervalSeconds: true,
+      sealedBids: { where: { bidderId: userId }, take: 1, select: { amount: true, createdAt: true } },
+      _count: { select: { sealedBids: true } },
     },
   },
 });
+
+type DynamicRoundFields = {
+  mode: RoundMode;
+  modeLockedAt: Date | null;
+  dutchStartPrice: Prisma.Decimal | null;
+  dutchFloorPrice: Prisma.Decimal | null;
+  dutchStep: Prisma.Decimal | null;
+  dutchIntervalSeconds: number | null;
+  sealedBids?: Array<{ amount: Prisma.Decimal; createdAt: Date }>;
+  _count?: { sealedBids: number };
+};
+
+/**
+ * Lo publico de una ronda dinamica. Del sobre cerrado sale solo el sobre de quien consulta y
+ * cuantos hay: los montos de los demas se ven en la apertura, cuando la ronda ya cerro.
+ */
+function toDynamicRound<T extends DynamicRoundFields>({
+  modeLockedAt, dutchStartPrice, dutchFloorPrice, dutchStep, dutchIntervalSeconds, sealedBids, _count, ...round
+}: T) {
+  const dutch = round.mode === RoundMode.DUTCH && dutchStartPrice && dutchFloorPrice && dutchStep
+    ? { startPrice: dutchStartPrice, floorPrice: dutchFloorPrice, step: dutchStep, intervalSeconds: dutchIntervalSeconds }
+    : null;
+  const sealed = round.mode === RoundMode.SEALED
+    ? { count: _count?.sealedBids ?? 0, mine: sealedBids?.[0] ? { amount: sealedBids[0].amount, sealedAt: sealedBids[0].createdAt } : null }
+    : null;
+  return { ...round, modeLocked: modeLockedAt !== null, dutch, sealed };
+}
 
 const statusFilter = (status?: RoomStatus[]) => (status?.length ? { status: { in: status } } : undefined);
 
@@ -43,22 +82,27 @@ const statusFilter = (status?: RoomStatus[]) => (status?.length ? { status: { in
  * necesita saber si ya hay pujas (para calcular la minima) y si el lider es el, no quien es
  * el otro. La sala la ven tambien quienes no participan.
  */
-function toRoomDetail<T extends {
-  participants: unknown[];
-  rounds: Array<{ currentBidderId: string | null; bids?: Array<{ amount: Prisma.Decimal }> }>;
-}>(
-  { participants, rounds, ...room }: T,
+function toRoomDetail<
+  R extends DynamicRoundFields & { currentBidderId: string | null; bids?: Array<{ amount: Prisma.Decimal }> },
+  T extends { scheduledBy: string; participants: unknown[] },
+>(
+  // La ronda va en su propio parametro de tipo: dentro de `T['rounds']` el resto de la
+  // desestructuracion se queda con la restriccion y pierde los campos del select.
+  { participants, rounds, ...room }: T & { rounds: R[] },
   userId: string,
 ) {
   return {
-    ...room,
+    ...withOwnership(room, userId),
     isParticipant: participants.length > 0,
-    rounds: rounds.map(({ currentBidderId, bids, ...round }) => ({
-      ...round,
-      hasBids: currentBidderId !== null,
-      isLeading: currentBidderId === userId,
-      myHighestBid: bids?.[0]?.amount ?? null,
-    })),
+    rounds: rounds.map((round) => {
+      const { currentBidderId, bids, ...rest } = toDynamicRound(round);
+      return {
+        ...rest,
+        hasBids: currentBidderId !== null,
+        isLeading: currentBidderId === userId,
+        myHighestBid: bids?.[0]?.amount ?? null,
+      };
+    }),
   };
 }
 
@@ -108,6 +152,7 @@ export class RoomsService {
           maximumCapacity: input.maximumCapacity,
           startsAt: new Date(input.startsAt),
           scheduledBy,
+          dynamicModesEnabled: input.dynamicModes ?? false,
           rounds: {
             create: rounds.map((round) => ({
               // El precio vigente arranca en el minimo: es lo que ve la sala antes de la primera puja.
@@ -245,7 +290,7 @@ export class RoomsService {
       },
     });
     return rooms.map(({ participants, _count, ...room }) => ({
-      ...room, roundCount: _count.rounds, isParticipant: participants.length > 0,
+      ...withOwnership(room, userId), roundCount: _count.rounds, isParticipant: participants.length > 0,
     }));
   }
 
@@ -304,6 +349,11 @@ export class RoomsService {
             entries: { select: { kind: true, catalogId: true } },
             // Solo la puja automatica de quien consulta (HU-22).
             autoBids: { where: { bidderId: userId }, select: { enabled: true, maximumAmount: true, stoppedReason: true }, take: 1 },
+            // ADR-0003: como se juega la ronda vigente.
+            mode: true, modeLockedAt: true,
+            dutchStartPrice: true, dutchFloorPrice: true, dutchStep: true, dutchIntervalSeconds: true,
+            sealedBids: { where: { bidderId: userId }, take: 1, select: { amount: true, createdAt: true } },
+            _count: { select: { sealedBids: true } },
           },
         },
       },
@@ -319,7 +369,7 @@ export class RoomsService {
     const autoBid = autoBids?.[0];
     return {
       ...roomState,
-      currentRound,
+      currentRound: toDynamicRound(currentRound),
       autoBid: autoBid
         ? { enabled: autoBid.enabled, maximumAmount: autoBid.maximumAmount, stopped: autoBid.stoppedReason !== null, stoppedReason: autoBid.stoppedReason }
         : null,
@@ -402,8 +452,10 @@ export class RoomsService {
           FOR UPDATE
         `;
         if (locked.length === 0) continue;
-        const round = await tx.round.findUnique({ where: { id }, select: ROUND_EVENT_SELECT });
-        if (!round) continue;
+        const snapshot = await tx.round.findUnique({ where: { id }, select: ROUND_EVENT_SELECT });
+        if (!snapshot) continue;
+        // Sobre cerrado: la puja sellada mas alta se vuelve el lider justo antes de cerrar.
+        const round = await resolveSealedRound(tx, snapshot);
 
         await closeRoundAndAdvance(tx, round, now, {
           result: round.currentBidderId ? RoundResult.AWARDED : RoundResult.DESERTED,

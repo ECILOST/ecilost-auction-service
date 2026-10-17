@@ -6,6 +6,13 @@ import { AuctionConfig } from '../config/auction.config.js';
 /** Cuanto se espera la respuesta de wallet. */
 const REPLY_TIMEOUT_MS = 5_000;
 
+/**
+ * Motivos con que wallet rechaza una reserva sin que falten fondos: estaba ocupada (`RETRY`)
+ * o fallo por otra causa (`ERROR`). `INSUFFICIENT_FUNDS` y `WALLET_NOT_FOUND` si significan
+ * que no hay con que pujar.
+ */
+const UNAVAILABLE_REASONS = new Set(['RETRY', 'ERROR']);
+
 type Reply = Record<string, unknown>;
 type Pending = { resolve: (reply: Reply) => void; reject: (error: Error) => void; timer: NodeJS.Timeout };
 type Link = { connection: amqp.ChannelModel; channel: amqp.Channel; replyQueue: string };
@@ -29,8 +36,23 @@ export class WalletHoldClient implements OnModuleDestroy {
 
   constructor(private readonly config: AuctionConfig) {}
 
+  /**
+   * Reserva `amount`. `false` solo cuando no hay fondos (o billetera) para cubrirla.
+   *
+   * Si wallet rechaza por estar ocupada o por un fallo propio, se lanza 503 en vez de
+   * devolver `false`: antes se mostraba como "saldo insuficiente" a quien tenia saldo de sobra,
+   * y la puja automatica se detenia para siempre. Quien llama ya trata una excepcion como
+   * "no se sabe si reservo": deshace por si acaso y propaga. Una respuesta sin `reason`
+   * (wallet anterior) conserva el comportamiento de siempre.
+   */
   async hold(userId: string, reference: string, amount: number): Promise<boolean> {
-    return (await this.request('wallet.bid-hold.requested.v1', { userId, reference, amount })).accepted === true;
+    const answer = await this.request('wallet.bid-hold.requested.v1', { userId, reference, amount });
+    if (answer.accepted === true) return true;
+    if (typeof answer.reason === 'string' && UNAVAILABLE_REASONS.has(answer.reason)) {
+      this.logger.warn(`wallet no reservo ${reference} (${answer.reason}); se responde 503`);
+      throw new ServiceUnavailableException('La billetera esta ocupada, intenta de nuevo.');
+    }
+    return false;
   }
   async release(userId: string, reference: string, amount: number): Promise<boolean> {
     return (await this.request('wallet.bid-release.requested.v1', { userId, reference, amount })).accepted === true;

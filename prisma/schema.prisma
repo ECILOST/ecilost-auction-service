@@ -34,9 +34,20 @@ enum RoundResult {
 
 // Que cerro la ronda (HU-24): el vencimiento de su reloj o una compra inmediata. No es un
 // estado nuevo: la ronda sigue pasando a CLOSED y el resultado sigue siendo AWARDED/DESERTED.
+// DUTCH_CLAIM: alguien pulso "Lo quiero" en una ronda holandesa (subastas dinamicas).
 enum RoundCloseReason {
   EXPIRED
   BUY_NOW
+  DUTCH_CLAIM
+}
+
+// Como se juega una ronda (subastas dinamicas, ADR-0003). CLASSIC es la subasta ascendente
+// de siempre y el valor de toda ronda que no paso por la ruleta.
+enum RoundMode {
+  CLASSIC
+  DUTCH
+  SEALED
+  MYSTERY
 }
 
 enum BidStatus {
@@ -59,6 +70,8 @@ model Room {
   admittedCount Int @default(0)
   startsAt DateTime
   scheduledBy String
+  // Solo quien programo la sala la activa: permite girar la ruleta antes de cada ronda.
+  dynamicModesEnabled Boolean @default(false)
   createdAt DateTime @default(now())
   rounds Round[]
   participants RoomParticipant[]
@@ -87,7 +100,18 @@ model Round {
   entries         RoundEntry[]
   bids            Bid[]
   autoBids        AutoBid[]
+  sealedBids      SealedBid[]
   status          RoundStatus @default(SCHEDULED)
+  // Subastas dinamicas (ADR-0003): la ruleta fija el modo una sola vez, antes de abrir la ronda.
+  mode            RoundMode   @default(CLASSIC)
+  modeLockedAt    DateTime?
+  // Comodines seguidos: tras el limite, la ruleta ya no ofrece comodin.
+  wildcardSpins   Int         @default(0)
+  // Solo holandesa: el precio baja de start a floor en pasos de step cada intervalSeconds.
+  dutchStartPrice      Decimal? @db.Decimal(18, 2)
+  dutchFloorPrice      Decimal? @db.Decimal(18, 2)
+  dutchStep            Decimal? @db.Decimal(18, 2)
+  dutchIntervalSeconds Int?
   // Precio minimo que fija el funcionario: la primera puja de la ronda debe alcanzarlo.
   startingPrice   Decimal     @default(0) @db.Decimal(18, 2)
   currentPrice    Decimal     @default(0) @db.Decimal(18, 2)
@@ -144,6 +168,20 @@ model AutoBid {
   @@unique([roundId, bidderId])
   @@index([roundId, enabled])
   @@map("auto_bids")
+}
+
+// Sobre cerrado (ADR-0003): una sola puja a ciegas por estudiante y ronda. No mueve el precio
+// ni el lider de la ronda: al cerrar, la mas alta (y en empate la primera) gana.
+model SealedBid {
+  id        String   @id
+  roundId   String
+  round     Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  bidderId  String
+  amount    Decimal  @db.Decimal(18, 2)
+  createdAt DateTime @default(now())
+  @@unique([roundId, bidderId])
+  @@index([roundId, amount(sort: Desc), createdAt])
+  @@map("sealed_bids")
 }
 
 model RoundEntry {

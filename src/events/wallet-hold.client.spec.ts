@@ -84,4 +84,36 @@ describe('WalletHoldClient', () => {
     await expect(next).resolves.toBe(true);
     expect(connect).toHaveBeenCalledTimes(2);
   });
+
+  describe('motivo del rechazo de una reserva', () => {
+    async function holdAnswered(reply: Record<string, unknown>) {
+      const broker = fakeBroker();
+      connect.mockResolvedValue(broker.connection);
+      const client = new WalletHoldClient({ rabbitmqUrl: 'amqp://test' } as never);
+      vi.spyOn((client as unknown as { logger: { warn: () => void } }).logger, 'warn').mockImplementation(() => undefined);
+      const hold = client.hold('bob', 'bid:round:bob', 1100);
+      await vi.waitFor(() => expect(broker.published).toHaveLength(1));
+      broker.answer(0, reply);
+      return hold;
+    }
+
+    it('sin fondos o sin billetera responde false: es "saldo insuficiente"', async () => {
+      await expect(holdAnswered({ accepted: false, reason: 'INSUFFICIENT_FUNDS' })).resolves.toBe(false);
+      await expect(holdAnswered({ accepted: false, reason: 'WALLET_NOT_FOUND' })).resolves.toBe(false);
+    });
+
+    it('si wallet estaba ocupada o fallo, lanza 503 en vez de reportar falta de saldo', async () => {
+      await expect(holdAnswered({ accepted: false, reason: 'RETRY' })).rejects.toBeInstanceOf(ServiceUnavailableException);
+      await expect(holdAnswered({ accepted: false, reason: 'ERROR' })).rejects.toThrow('La billetera esta ocupada, intenta de nuevo.');
+    });
+
+    it('un wallet anterior, sin reason, conserva el comportamiento de siempre', async () => {
+      await expect(holdAnswered({ accepted: false })).resolves.toBe(false);
+      await expect(holdAnswered({ accepted: true })).resolves.toBe(true);
+    });
+
+    it('un motivo desconocido no se confunde con wallet ocupada', async () => {
+      await expect(holdAnswered({ accepted: false, reason: 'ALGO_NUEVO' })).resolves.toBe(false);
+    });
+  });
 });

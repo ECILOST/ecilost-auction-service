@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { RoomsController } from './rooms.controller.js';
 import { RoomsService } from './rooms.service.js';
+import { DynamicModesService } from './dynamic-modes.service.js';
 import { EventsModule } from '../events/events.module.js';
 import { BidsModule } from '../bids/bids.module.js';
 import { RoomActivationScheduler } from './room-activation.scheduler.js';
-@Module({ imports: [EventsModule, BidsModule], controllers: [RoomsController], providers: [RoomsService, RoomActivationScheduler] })
+@Module({ imports: [EventsModule, BidsModule], controllers: [RoomsController], providers: [RoomsService, DynamicModesService, RoomActivationScheduler] })
 export class RoomsModule {}

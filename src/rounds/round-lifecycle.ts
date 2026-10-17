@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Logger } from '@nestjs/common';
-import { Prisma, RoomStatus, RoundCloseReason, RoundResult, RoundStatus } from '../generated/prisma/client.js';
+import { Prisma, RoomStatus, RoundCloseReason, RoundMode, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 
 const ROUND_DURATION_MS = 3 * 60 * 1000;
 const MAX_ROUND_DURATION_MS = 8 * 60 * 1000;
@@ -23,12 +23,19 @@ export type RoundEventSnapshot = {
   endsAt: Date | null;
   maximumEndsAt: Date | null;
   entries: Array<{ kind: string; catalogId: string }>;
+  /** Subastas dinamicas (ADR-0003). Las rondas que no pasaron por la ruleta son CLASSIC. */
+  mode: RoundMode;
+  dutchStartPrice: Prisma.Decimal | null;
+  dutchFloorPrice: Prisma.Decimal | null;
+  dutchStep: Prisma.Decimal | null;
+  dutchIntervalSeconds: number | null;
 };
 
 export const ROUND_EVENT_SELECT = {
   id: true, roomId: true, position: true, currentPrice: true, currentBidderId: true,
   startedAt: true, endsAt: true, maximumEndsAt: true,
   entries: { select: { kind: true, catalogId: true } },
+  mode: true, dutchStartPrice: true, dutchFloorPrice: true, dutchStep: true, dutchIntervalSeconds: true,
 } as const;
 
 /** Con que resultado se cierra una ronda: quien la gana, si alguien la gana, y que la cerro. */
@@ -63,6 +70,16 @@ export async function enqueueRoundEvent(
         endsAt: round.endsAt?.toISOString() ?? null,
         maximumEndsAt: round.maximumEndsAt?.toISOString() ?? null,
         entries: round.entries.map((entry) => ({ kind: entry.kind, catalogId: entry.catalogId })),
+        // Campos agregados (ADR-0003). Los consumidores anteriores los ignoran.
+        mode: round.mode,
+        dutch: round.mode === RoundMode.DUTCH && round.dutchStartPrice && round.dutchFloorPrice && round.dutchStep
+          ? {
+              startPrice: round.dutchStartPrice.toString(),
+              floorPrice: round.dutchFloorPrice.toString(),
+              step: round.dutchStep.toString(),
+              intervalSeconds: round.dutchIntervalSeconds,
+            }
+          : null,
         // Wallet cobra y libera, y catalog vende o devuelve, a partir de estos tres campos.
         ...(closing
           ? {
@@ -70,7 +87,7 @@ export async function enqueueRoundEvent(
               result: closing.result,
               winnerId: closing.winnerId,
               winningAmount: closing.winnerId ? round.currentPrice.toString() : null,
-              // Campo agregado (HU-24): EXPIRED o BUY_NOW. Los consumidores anteriores lo ignoran.
+              // Campo agregado (HU-24): EXPIRED, BUY_NOW o DUTCH_CLAIM. Los consumidores anteriores lo ignoran.
               closeReason: closing.closeReason,
             }
           : {}),
@@ -137,4 +154,28 @@ export async function closeRoundAndAdvance(
       );
     }
   }
+}
+
+/**
+ * Sobre cerrado (ADR-0003): al vencer la ronda, la puja sellada mas alta pasa a ser el precio
+ * y el lider, y en empate gana la que se sello primero. Asi el cierre comun
+ * (`closeRoundAndAdvance`) adjudica, publica `winningAmount` y wallet cobra al ganador y
+ * libera a los demas exactamente como en cualquier ronda.
+ *
+ * Quien llama ya bloqueo la fila de la ronda: una puja sellada que llega a la vez espera ese
+ * bloqueo y, al obtenerlo, la ronda ya no esta ACTIVE y se rechaza.
+ */
+export async function resolveSealedRound(tx: Prisma.TransactionClient, round: RoundEventSnapshot): Promise<RoundEventSnapshot> {
+  if (round.mode !== RoundMode.SEALED) return round;
+  const best = await tx.sealedBid.findFirst({
+    where: { roundId: round.id },
+    orderBy: [{ amount: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+    select: { bidderId: true, amount: true },
+  });
+  if (!best) return round;
+  return tx.round.update({
+    where: { id: round.id },
+    data: { currentPrice: best.amount, currentBidderId: best.bidderId },
+    select: ROUND_EVENT_SELECT,
+  });
 }

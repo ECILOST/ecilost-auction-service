@@ -44,6 +44,7 @@ export type RoomMinAggregateOutputType = {
   admittedCount: number | null
   startsAt: Date | null
   scheduledBy: string | null
+  dynamicModesEnabled: boolean | null
   createdAt: Date | null
 }
 
@@ -55,6 +56,7 @@ export type RoomMaxAggregateOutputType = {
   admittedCount: number | null
   startsAt: Date | null
   scheduledBy: string | null
+  dynamicModesEnabled: boolean | null
   createdAt: Date | null
 }
 
@@ -66,6 +68,7 @@ export type RoomCountAggregateOutputType = {
   admittedCount: number
   startsAt: number
   scheduledBy: number
+  dynamicModesEnabled: number
   createdAt: number
   _all: number
 }
@@ -89,6 +92,7 @@ export type RoomMinAggregateInputType = {
   admittedCount?: true
   startsAt?: true
   scheduledBy?: true
+  dynamicModesEnabled?: true
   createdAt?: true
 }
 
@@ -100,6 +104,7 @@ export type RoomMaxAggregateInputType = {
   admittedCount?: true
   startsAt?: true
   scheduledBy?: true
+  dynamicModesEnabled?: true
   createdAt?: true
 }
 
@@ -111,6 +116,7 @@ export type RoomCountAggregateInputType = {
   admittedCount?: true
   startsAt?: true
   scheduledBy?: true
+  dynamicModesEnabled?: true
   createdAt?: true
   _all?: true
 }
@@ -209,6 +215,7 @@ export type RoomGroupByOutputType = {
   admittedCount: number
   startsAt: Date
   scheduledBy: string
+  dynamicModesEnabled: boolean
   createdAt: Date
   _count: RoomCountAggregateOutputType | null
   _avg: RoomAvgAggregateOutputType | null
@@ -243,6 +250,7 @@ export type RoomWhereInput = {
   admittedCount?: Prisma.IntFilter<"Room"> | number
   startsAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   scheduledBy?: Prisma.StringFilter<"Room"> | string
+  dynamicModesEnabled?: Prisma.BoolFilter<"Room"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   rounds?: Prisma.RoundListRelationFilter
   participants?: Prisma.RoomParticipantListRelationFilter
@@ -256,6 +264,7 @@ export type RoomOrderByWithRelationInput = {
   admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
+  dynamicModesEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   rounds?: Prisma.RoundOrderByRelationAggregateInput
   participants?: Prisma.RoomParticipantOrderByRelationAggregateInput
@@ -272,6 +281,7 @@ export type RoomWhereUniqueInput = Prisma.AtLeast<{
   admittedCount?: Prisma.IntFilter<"Room"> | number
   startsAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   scheduledBy?: Prisma.StringFilter<"Room"> | string
+  dynamicModesEnabled?: Prisma.BoolFilter<"Room"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Room"> | Date | string
   rounds?: Prisma.RoundListRelationFilter
   participants?: Prisma.RoomParticipantListRelationFilter
@@ -285,6 +295,7 @@ export type RoomOrderByWithAggregationInput = {
   admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
+  dynamicModesEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.RoomCountOrderByAggregateInput
   _avg?: Prisma.RoomAvgOrderByAggregateInput
@@ -304,6 +315,7 @@ export type RoomScalarWhereWithAggregatesInput = {
   admittedCount?: Prisma.IntWithAggregatesFilter<"Room"> | number
   startsAt?: Prisma.DateTimeWithAggregatesFilter<"Room"> | Date | string
   scheduledBy?: Prisma.StringWithAggregatesFilter<"Room"> | string
+  dynamicModesEnabled?: Prisma.BoolWithAggregatesFilter<"Room"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Room"> | Date | string
 }
 
@@ -315,6 +327,7 @@ export type RoomCreateInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
   rounds?: Prisma.RoundCreateNestedManyWithoutRoomInput
   participants?: Prisma.RoomParticipantCreateNestedManyWithoutRoomInput
@@ -328,6 +341,7 @@ export type RoomUncheckedCreateInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
   rounds?: Prisma.RoundUncheckedCreateNestedManyWithoutRoomInput
   participants?: Prisma.RoomParticipantUncheckedCreateNestedManyWithoutRoomInput
@@ -341,6 +355,7 @@ export type RoomUpdateInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rounds?: Prisma.RoundUpdateManyWithoutRoomNestedInput
   participants?: Prisma.RoomParticipantUpdateManyWithoutRoomNestedInput
@@ -354,6 +369,7 @@ export type RoomUncheckedUpdateInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rounds?: Prisma.RoundUncheckedUpdateManyWithoutRoomNestedInput
   participants?: Prisma.RoomParticipantUncheckedUpdateManyWithoutRoomNestedInput
@@ -367,6 +383,7 @@ export type RoomCreateManyInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
 }
 
@@ -378,6 +395,7 @@ export type RoomUpdateManyMutationInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -389,6 +407,7 @@ export type RoomUncheckedUpdateManyInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -400,6 +419,7 @@ export type RoomCountOrderByAggregateInput = {
   admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
+  dynamicModesEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -416,6 +436,7 @@ export type RoomMaxOrderByAggregateInput = {
   admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
+  dynamicModesEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -427,6 +448,7 @@ export type RoomMinOrderByAggregateInput = {
   admittedCount?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   scheduledBy?: Prisma.SortOrder
+  dynamicModesEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -458,6 +480,10 @@ export type IntFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type RoomCreateNestedOneWithoutParticipantsInput = {
@@ -496,6 +522,7 @@ export type RoomCreateWithoutParticipantsInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
   rounds?: Prisma.RoundCreateNestedManyWithoutRoomInput
 }
@@ -508,6 +535,7 @@ export type RoomUncheckedCreateWithoutParticipantsInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
   rounds?: Prisma.RoundUncheckedCreateNestedManyWithoutRoomInput
 }
@@ -536,6 +564,7 @@ export type RoomUpdateWithoutParticipantsInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rounds?: Prisma.RoundUpdateManyWithoutRoomNestedInput
 }
@@ -548,6 +577,7 @@ export type RoomUncheckedUpdateWithoutParticipantsInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rounds?: Prisma.RoundUncheckedUpdateManyWithoutRoomNestedInput
 }
@@ -560,6 +590,7 @@ export type RoomCreateWithoutRoundsInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
   participants?: Prisma.RoomParticipantCreateNestedManyWithoutRoomInput
 }
@@ -572,6 +603,7 @@ export type RoomUncheckedCreateWithoutRoundsInput = {
   admittedCount?: number
   startsAt: Date | string
   scheduledBy: string
+  dynamicModesEnabled?: boolean
   createdAt?: Date | string
   participants?: Prisma.RoomParticipantUncheckedCreateNestedManyWithoutRoomInput
 }
@@ -600,6 +632,7 @@ export type RoomUpdateWithoutRoundsInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   participants?: Prisma.RoomParticipantUpdateManyWithoutRoomNestedInput
 }
@@ -612,6 +645,7 @@ export type RoomUncheckedUpdateWithoutRoundsInput = {
   admittedCount?: Prisma.IntFieldUpdateOperationsInput | number
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scheduledBy?: Prisma.StringFieldUpdateOperationsInput | string
+  dynamicModesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   participants?: Prisma.RoomParticipantUncheckedUpdateManyWithoutRoomNestedInput
 }
@@ -664,6 +698,7 @@ export type RoomSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
+  dynamicModesEnabled?: boolean
   createdAt?: boolean
   rounds?: boolean | Prisma.Room$roundsArgs<ExtArgs>
   participants?: boolean | Prisma.Room$participantsArgs<ExtArgs>
@@ -678,6 +713,7 @@ export type RoomSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
+  dynamicModesEnabled?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["room"]>
 
@@ -689,6 +725,7 @@ export type RoomSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
+  dynamicModesEnabled?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["room"]>
 
@@ -700,10 +737,11 @@ export type RoomSelectScalar = {
   admittedCount?: boolean
   startsAt?: boolean
   scheduledBy?: boolean
+  dynamicModesEnabled?: boolean
   createdAt?: boolean
 }
 
-export type RoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "status" | "maximumCapacity" | "admittedCount" | "startsAt" | "scheduledBy" | "createdAt", ExtArgs["result"]["room"]>
+export type RoomOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "status" | "maximumCapacity" | "admittedCount" | "startsAt" | "scheduledBy" | "dynamicModesEnabled" | "createdAt", ExtArgs["result"]["room"]>
 export type RoomInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rounds?: boolean | Prisma.Room$roundsArgs<ExtArgs>
   participants?: boolean | Prisma.Room$participantsArgs<ExtArgs>
@@ -726,6 +764,7 @@ export type $RoomPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     admittedCount: number
     startsAt: Date
     scheduledBy: string
+    dynamicModesEnabled: boolean
     createdAt: Date
   }, ExtArgs["result"]["room"]>
   composites: {}
@@ -1159,6 +1198,7 @@ export interface RoomFieldRefs {
   readonly admittedCount: Prisma.FieldRef<"Room", 'Int'>
   readonly startsAt: Prisma.FieldRef<"Room", 'DateTime'>
   readonly scheduledBy: Prisma.FieldRef<"Room", 'String'>
+  readonly dynamicModesEnabled: Prisma.FieldRef<"Room", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Room", 'DateTime'>
 }
     
