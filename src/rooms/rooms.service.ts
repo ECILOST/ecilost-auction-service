@@ -330,6 +330,8 @@ export class RoomsService {
       select: {
         id: true,
         status: true,
+        // El dueño sigue su sala en vivo sin pujar; su id no se publica.
+        scheduledBy: true,
         participants: { where: { userId }, select: { id: true }, take: 1 },
         rounds: {
           where: { status: RoundStatus.ACTIVE },
@@ -359,9 +361,12 @@ export class RoomsService {
       },
     });
     if (!room) throw new NotFoundException('La sala no existe.');
-    if (room.participants.length === 0) throw new ForbiddenException('Debes estar admitido en la sala para consultar su estado.');
+    const isOwner = room.scheduledBy === userId;
+    if (room.participants.length === 0 && !isOwner) {
+      throw new ForbiddenException('Debes estar admitido en la sala para consultar su estado.');
+    }
 
-    const { participants: _participants, rounds, ...roomState } = room;
+    const { participants: _participants, scheduledBy: _scheduledBy, rounds, ...roomState } = room;
     const current = rounds[0];
     const serverTime = await this.databaseNow();
     if (!current) return { ...roomState, currentRound: null, autoBid: null, serverTime };

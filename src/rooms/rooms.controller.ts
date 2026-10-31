@@ -30,8 +30,9 @@ export class RoomsController {
     return this.rooms.getRoom(roomId, principal.userId);
   }
 
+  /** El participante, y el funcionario dueño de la sala para seguirla (no puja: bids es solo STUDENT). */
   @Get(':roomId/state')
-  @Roles(Role.STUDENT)
+  @Roles(Role.STUDENT, Role.STAFF)
   currentState(@CurrentUser() principal: Principal, @Param('roomId', new ParseUUIDPipe({ version: '4' })) roomId: string) {
     return this.rooms.getCurrentState(roomId, principal.userId);
   }

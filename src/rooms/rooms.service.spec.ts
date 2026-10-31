@@ -407,4 +407,16 @@ describe('RoomsService', () => {
     const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
     await expect(service.getCurrentState('room', 'intruso')).rejects.toBeInstanceOf(ForbiddenException);
   });
+  it('entrega el estado al funcionario dueño de la sala sin publicar quien es el dueño', async () => {
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', scheduledBy: 'staff', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
+    const state = await service.getCurrentState('room', 'staff');
+    expect(state).toMatchObject({ id: 'room', status: 'ACTIVE', currentRound: null });
+    expect(state).not.toHaveProperty('scheduledBy');
+  });
+  it('no entrega el estado a un funcionario que no es dueño de la sala', async () => {
+    const findUnique = vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', scheduledBy: 'staff', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { findUnique }, $queryRaw: dbClock() } as never, catalog as never);
+    await expect(service.getCurrentState('room', 'otro-staff')).rejects.toBeInstanceOf(ForbiddenException);
+  });
 });
