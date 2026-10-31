@@ -148,6 +148,9 @@ model Bid {
   updatedAt DateTime  @updatedAt
   @@unique([roundId, sequence])
   @@index([roundId, status, sequence])
+  // "Mi mejor puja" de cada ronda en el detalle de la sala (roomDetailSelect), que se lee en
+  // cada evento de la sala: sin este indice Postgres recorre todas las pujas de la sala.
+  @@index([bidderId, roundId])
   @@map("bids")
 }
 
