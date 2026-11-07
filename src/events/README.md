@@ -7,11 +7,13 @@ Eventos versionados en el exchange topic `ecilost.events`. Auction los escribe e
 | Evento | Cuándo | Consumidores | Payload (además de `eventId`, `eventType`, `occurredAt`, `roomId`, `roundId`, `position`) |
 |---|---|---|---|
 | `auction.round.activated.v1` | Se abre una ronda: la primera al iniciar la sala, o la siguiente al cerrar la anterior. | Engagement (socket `round.activated`) | `roomStatus` (`ACTIVE`), `currentPrice`, `currentBidderId`, `startedAt`, `endsAt`, `maximumEndsAt`, `entries` |
-| `auction.round.closed.v1` | Vence una ronda o una compra inmediata la cierra (HU-24). | Engagement (`round.closed`, `round.won`, bandeja), Wallet (liquidación), Catalog | `roomStatus` (`CLOSED` si era la última ronda; si no, `ACTIVE`), `currentPrice`, `currentBidderId`, `closedAt`, `result`, `winnerId`, `winningAmount`, `closeReason` (`EXPIRED` o `BUY_NOW`) |
+| `auction.round.closed.v1` | Vence una ronda o una compra inmediata la cierra (HU-24). | Engagement (`round.closed`, `round.won`, bandeja), Wallet (liquidación), Catalog | `roomStatus` (`CLOSED` si era la última ronda; si no, `ACTIVE`), `currentPrice`, `currentBidderId`, `closedAt`, `result`, `winnerId`, `winningAmount`, `closeReason` (`EXPIRED` o `BUY_NOW`), `mode`, `participants[{ bidderId, bids, bestAmount }]`, `runnerUpAmount` (solo sobre cerrado) |
 | `auction.bid.accepted.v1` | Se acepta una puja manual o automática. | Engagement (`round.price`, `bid.outbid`) | `bidId`, `bidderId`, `amount`, `previousBidderId`, `previousPrice`, `currentBidderId`, `currentPrice`, `endsAt`, `previousEndsAt`, `extended` (anti-sniping), `automatic`, `sequence` |
 | `catalog.round-reservation.cancelled.v1` | Una sala no llegó a guardarse tras reservar en Catalog. | Catalog | `rounds[{ roundId, entries }]` |
 
-`roomStatus`, `previousEndsAt`, `extended`, `automatic` y `closeReason` son campos agregados: los consumidores anteriores los ignoran.
+`roomStatus`, `previousEndsAt`, `extended`, `automatic`, `closeReason`, `participants` y `runnerUpAmount` son campos agregados: los consumidores anteriores los ignoran.
+
+`participants` y `runnerUpAmount` existen para la gamificación de Engagement (perfil y top semanal): quién pujó en la ronda, cuántas veces y con qué oferta máxima. En sobre cerrado salen de los sobres y `runnerUpAmount` es la mejor oferta del segundo postor (para la medalla "Sobre perfecto"); en las demás modalidades, de las pujas aceptadas, y `runnerUpAmount` va en `null`. Solo viajan por el bus interno: ninguna respuesta HTTP los expone.
 
 Una compra inmediata no tiene evento propio: es un `auction.round.closed.v1` con `result: AWARDED`, `winnerId` = comprador, `currentPrice` = `winningAmount` = precio de compra y `closeReason: BUY_NOW`, seguido del `auction.round.activated.v1` de la siguiente ronda si la hay. Así Wallet cobra y libera, Catalog vende y Engagement avisa sin cambios. El outbox se escribe en la misma transacción que el cierre: no se publica nada de una compra que no quedó guardada.
 
