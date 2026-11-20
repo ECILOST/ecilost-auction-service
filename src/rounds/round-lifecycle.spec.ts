@@ -54,6 +54,7 @@ describe('round advancement', () => {
     const tx = {
       round: { update, findFirst, updateMany, findUnique },
       room: { updateMany: roomUpdate },
+      bid: { groupBy: vi.fn().mockResolvedValue([]) },
       outboxEvent: { create },
     } as unknown as Prisma.TransactionClient;
     const now = new Date('2030-01-01T00:00:00Z');
