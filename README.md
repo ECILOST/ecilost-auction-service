@@ -1,6 +1,6 @@
 # ECILOST Auction Core
 
-Esqueleto del contexto de subastas: concentra salas, rondas, pujas y auto-bid.
+Servicio que programa salas, admite participantes y decide el resultado de rondas, pujas y compras inmediatas. PostgreSQL conserva el estado de las subastas. Auction consulta Auth mediante JWKS y se integra con Catalog, Wallet y Engagement a través de RabbitMQ.
 
 ```text
 src/
@@ -9,19 +9,46 @@ src/
 prisma/ test/
 ```
 
-Catalog, Wallet y Auth se consumirán mediante contratos; no mediante sus bases de datos.
+## Inicio local
+
+Requiere Node.js 22, PostgreSQL y RabbitMQ. Levanta Auth para obtener el JWT y su JWKS, Catalog para reservar objetos o lotes, y Wallet para reservar y liquidar Ecicoin. Engagement entrega los eventos en vivo al cliente.
+
+```bash
+cp .env.example .env
+docker compose up -d
+npm ci
+npx prisma generate
+npm run db:deploy
+npm run start:dev
+```
+
+Completa `DATABASE_URL`, `RABBITMQ_URL`, `AUTH_JWKS_URL`, `JWT_ISSUER` y `JWT_AUDIENCE` antes del arranque. El puerto HTTP local es `3003`.
+
+## OpenAPI
+
+Abre el [contrato OpenAPI](docs/openapi.json) en Swagger Editor para consultar rutas y esquemas. En las solicitudes HTTP, envía un JWT vigente emitido por Auth. Un `401` indica que la credencial faltó o falló la validación. Un `403` indica rol, propiedad o admisión insuficientes para la operación.
+
+```bash
+curl -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:3003/rooms
+```
+
+| Flujo | Ruta principal | Rol |
+|---|---|---|
+| Programar sala | `POST /rooms` | `STAFF` |
+| Descubrir salas | `GET /rooms?include=rounds&status=SCHEDULED,ACTIVE` | `STAFF` o `STUDENT` |
+| Inscribirse antes del inicio | `POST /rooms/{roomId}/participants` | `STUDENT` |
+| Consultar la ronda activa | `GET /rooms/{roomId}/state` | Participante admitido o funcionario dueño |
+| Pujar y comprar | `POST /rounds/{roundId}/bids` y `POST /rounds/{roundId}/buy-now` | `STUDENT` |
 
 ## Concurrencia (decisión de diseño)
 
-Auction no debe abrir transacciones distribuidas ni sostener transacciones de base de datos mientras espera a otro servicio. Cada comando de puja se procesará con la clave de partición `roomId`: una sala se ordena de forma determinista, mientras salas distintas pueden avanzar en paralelo. Las persistencias de cada agregado usan versión esperada (control optimista), idempotency key por comando y eventos versionados mediante outbox.
-
-La reserva o liberación de fondos y los cambios de Catalog se solicitan/confirmarán mediante eventos RabbitMQ. Un fallo se resuelve con estados explícitos y compensación, nunca con una transacción entre servicios. Esta es una decisión de scaffolding; los nombres y contratos concretos de eventos se definen antes de crear consumidores.
+Auction coordina la reserva de inventario y fondos por RabbitMQ. PostgreSQL serializa las operaciones sobre una ronda y conserva un historial ordenado. Los eventos de subasta se publican mediante outbox. Wallet liquida el cierre y Engagement actualiza sus proyecciones.
 
 ## HU — Programar sala
 
 `POST /rooms` requiere un JWT de `STAFF` y recibe `maximumCapacity`, `startsAt` y una lista ordenada de rondas. Cada ronda debe incluir por lo menos un `ITEM` o `LOT`. La sala nace `SCHEDULED` y la restricción única `(kind, catalogId)` rechaza concurrentemente una referencia ya reservada, con HTTP 409.
 
-La próxima integración obligatoria es el contrato RabbitMQ con Catalog que confirma que dichas referencias existen y siguen disponibles. Auction no accede a la base de datos de Catalog; mientras ese consumidor no esté desplegado, la historia cubre la exclusividad local pero no certifica disponibilidad remota.
+Catalog confirma la disponibilidad mediante el contrato de reserva por RabbitMQ. Un objeto o lote no disponible produce `409`.
 
 ## HU-18, HU-19, HU-22 y HU-23 — Ciclo de vida, pujas automáticas y anti-sniping
 
