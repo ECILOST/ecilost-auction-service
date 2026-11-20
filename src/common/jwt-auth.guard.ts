@@ -13,7 +13,12 @@ export class JwtAuthGuard implements CanActivate {
     const token = request.headers.authorization?.split(' ')[1];
     if (!token) throw new UnauthorizedException('Falta el token de acceso.');
     try {
-      const { payload } = await jwtVerify(token, this.jwks, { issuer: this.config.jwtIssuer, audience: this.config.jwtAudience, algorithms: ['RS256'] });
+      const { payload } = await jwtVerify(token, this.jwks, {
+        issuer: this.config.jwtIssuer,
+        audience: this.config.jwtAudience,
+        algorithms: ['RS256'],
+        requiredClaims: ['exp'],
+      });
       if (!payload.sub || (payload.role !== 'STAFF' && payload.role !== 'STUDENT')) throw new Error('claims incompletos');
       request.principal = new Principal(payload.sub, payload.role as Role);
       return true;
