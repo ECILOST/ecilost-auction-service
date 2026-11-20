@@ -293,6 +293,9 @@ describe('RoomsService', () => {
     },
     // El cierre bloquea la fila de la ronda antes de leer al lider.
     $queryRaw: vi.fn().mockResolvedValue([{ id: 'round-1' }]),
+    // El cierre consulta quien participo (gamificacion).
+    bid: { groupBy: vi.fn().mockResolvedValue([]) },
+    sealedBid: { groupBy: vi.fn().mockResolvedValue([]) },
     outboxEvent: { create: vi.fn() },
     ...overrides,
   });

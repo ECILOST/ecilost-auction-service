@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Logger } from '@nestjs/common';
-import { Prisma, RoomStatus, RoundCloseReason, RoundMode, RoundResult, RoundStatus } from '../generated/prisma/client.js';
+import { BidStatus, Prisma, RoomStatus, RoundCloseReason, RoundMode, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 
 const ROUND_DURATION_MS = 3 * 60 * 1000;
 const MAX_ROUND_DURATION_MS = 8 * 60 * 1000;
@@ -49,6 +49,8 @@ export async function enqueueRoundEvent(
   closing?: RoundClosing & { closedAt: Date },
 ) {
   const eventId = randomUUID();
+  // Solo el cierre lleva participantes: engagement los usa para el perfil y el top semanal.
+  const settlement = closing ? await roundParticipants(tx, round) : null;
   await tx.outboxEvent.create({
     data: {
       id: eventId,
@@ -89,6 +91,10 @@ export async function enqueueRoundEvent(
               winningAmount: closing.winnerId ? round.currentPrice.toString() : null,
               // Campo agregado (HU-24): EXPIRED, BUY_NOW o DUTCH_CLAIM. Los consumidores anteriores lo ignoran.
               closeReason: closing.closeReason,
+              // Campos agregados (gamificacion): quien participo y, en sobre cerrado, la segunda
+              // oferta. Viajan solo por el bus interno; los consumidores anteriores los ignoran.
+              participants: settlement?.participants ?? [],
+              runnerUpAmount: settlement?.runnerUpAmount ?? null,
             }
           : {}),
       },
@@ -178,4 +184,45 @@ export async function resolveSealedRound(tx: Prisma.TransactionClient, round: Ro
     data: { currentPrice: best.amount, currentBidderId: best.bidderId },
     select: ROUND_EVENT_SELECT,
   });
+}
+
+/** Lo que hizo cada postor en una ronda: cuantas pujas y la mas alta. */
+export type RoundParticipant = { bidderId: string; bids: number; bestAmount: string };
+
+/**
+ * Participantes de una ronda al cerrarla, para engagement (perfil y top semanal).
+ *
+ * En sobre cerrado las ofertas estan en `SealedBid`; en las demas modalidades, las pujas
+ * aceptadas. `runnerUpAmount` es la mejor oferta del segundo postor y solo se calcula en
+ * sobre cerrado, que es donde importa cuanto le gano el ganador al resto. Se lee dentro de
+ * la transaccion del cierre, con la fila de la ronda ya bloqueada: no cambia mientras tanto.
+ */
+export async function roundParticipants(
+  tx: Prisma.TransactionClient,
+  round: Pick<RoundEventSnapshot, 'id' | 'mode'>,
+): Promise<{ participants: RoundParticipant[]; runnerUpAmount: string | null }> {
+  const grouped = round.mode === RoundMode.SEALED
+    ? await tx.sealedBid.groupBy({
+        by: ['bidderId'],
+        where: { roundId: round.id },
+        _count: { _all: true },
+        _max: { amount: true },
+      })
+    : await tx.bid.groupBy({
+        by: ['bidderId'],
+        where: { roundId: round.id, status: BidStatus.ACCEPTED },
+        _count: { _all: true },
+        _max: { amount: true },
+      });
+
+  const participants = grouped
+    .filter((row) => row._max.amount !== null)
+    .map((row) => ({ bidderId: row.bidderId, bids: row._count._all, bestAmount: row._max.amount as Prisma.Decimal }))
+    .sort((a, b) => b.bestAmount.comparedTo(a.bestAmount) || a.bidderId.localeCompare(b.bidderId));
+
+  const runnerUp = round.mode === RoundMode.SEALED ? participants[1] : undefined;
+  return {
+    participants: participants.map((row) => ({ bidderId: row.bidderId, bids: row.bids, bestAmount: row.bestAmount.toString() })),
+    runnerUpAmount: runnerUp ? runnerUp.bestAmount.toString() : null,
+  };
 }

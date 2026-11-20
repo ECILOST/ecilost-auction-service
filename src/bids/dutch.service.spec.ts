@@ -17,6 +17,9 @@ function setup({ mode = RoundMode.DUTCH as RoundMode, state = { roomId: 'room', 
     $queryRaw: vi.fn().mockResolvedValue(locked),
     round: { update: vi.fn().mockResolvedValue(snapshot()), findFirst: vi.fn().mockResolvedValue({ id: 'next' }), updateMany: vi.fn().mockResolvedValue({ count: 1 }), findUnique: vi.fn().mockResolvedValue(snapshot({ id: 'next', position: 2 })) },
     room: { updateMany: vi.fn() },
+    // El cierre consulta quien participo (gamificacion).
+    bid: { groupBy: vi.fn().mockResolvedValue([]) },
+    sealedBid: { groupBy: vi.fn().mockResolvedValue([]) },
     outboxEvent: { create: vi.fn() },
   };
   const prisma = {

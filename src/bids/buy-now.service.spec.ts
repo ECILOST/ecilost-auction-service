@@ -25,6 +25,9 @@ describe('BuyNowService (HU-24)', () => {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     room: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    // El cierre consulta quien participo (gamificacion).
+    bid: { groupBy: vi.fn().mockResolvedValue([]) },
+    sealedBid: { groupBy: vi.fn().mockResolvedValue([]) },
     outboxEvent: { create: vi.fn() },
   });
   /**

@@ -1,0 +1,1535 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ECILOST Auction Service",
+    "version": "0.1.0",
+    "description": "Programa salas y rondas, registra participantes y procesa pujas y compras. Los importes de entrada son enteros en Ecicoin. El reloj del servidor gobierna el inicio y el cierre."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3003",
+      "description": "Desarrollo local"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Salas"
+    },
+    {
+      "name": "Pujas"
+    }
+  ],
+  "paths": {
+    "/rooms": {
+      "get": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "listRooms",
+        "summary": "Lista las salas ordenadas por inicio",
+        "description": "Disponible para STAFF y STUDENT. Con include=rounds cada sala incluye sus rondas y la hora del servidor.",
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Incluye el detalle de las rondas.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rounds"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Estados separados por comas.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "SCHEDULED",
+                  "ACTIVE",
+                  "CLOSED",
+                  "CANCELLED"
+                ]
+              }
+            },
+            "style": "form",
+            "explode": false,
+            "example": [
+              "SCHEDULED",
+              "ACTIVE"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salas que coinciden con los filtros.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Room"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "scheduleRoom",
+        "summary": "Programa una sala",
+        "description": "Requiere STAFF. Catalog debe confirmar que los objetos y lotes solicitados están disponibles.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleRoom"
+              },
+              "example": {
+                "name": "Subasta de noviembre",
+                "maximumCapacity": 20,
+                "startsAt": "2030-11-20T15:00:00Z",
+                "rounds": [
+                  {
+                    "entries": [
+                      {
+                        "kind": "ITEM",
+                        "catalogId": "11111111-1111-4111-8111-111111111111"
+                      }
+                    ],
+                    "startingPrice": 100,
+                    "buyNowPrice": 500
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sala programada con sus rondas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Room"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoomId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "getRoom",
+        "summary": "Consulta una sala y sus rondas",
+        "description": "Disponible para STAFF y STUDENT. Incluye las preferencias y pujas propias de quien consulta cuando corresponda.",
+        "responses": {
+          "200": {
+            "description": "Detalle y hora del servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Room"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/state": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoomId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "getRoomState",
+        "summary": "Consulta el estado en vivo",
+        "description": "Lo consulta el participante admitido o el funcionario que programó la sala.",
+        "responses": {
+          "200": {
+            "description": "Estado de la sala y ronda activa, si existe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomState"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/participants": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoomId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "admitParticipant",
+        "summary": "Solicita un cupo en una sala",
+        "description": "Requiere STUDENT. Solo se admiten nuevos participantes antes del inicio y mientras haya aforo.",
+        "responses": {
+          "201": {
+            "description": "Registro de admisión, nuevo o existente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Admission"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/dynamic-modes": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoomId"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "setDynamicModes",
+        "summary": "Configura las modalidades dinámicas",
+        "description": "Requiere el rol STAFF y ser dueño de la sala.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Toggle"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuración de la sala.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "roomId",
+                    "dynamicModesEnabled"
+                  ],
+                  "properties": {
+                    "roomId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "dynamicModesEnabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/rounds/{roundId}/spin": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoomId"
+        },
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Salas"
+        ],
+        "operationId": "spinRoundMode",
+        "summary": "Gira la ruleta de una ronda",
+        "description": "Requiere el rol STAFF y ser dueño de la sala. El servidor elige el resultado.",
+        "responses": {
+          "201": {
+            "description": "Resultado de la tirada y si se permite repetirla.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Spin"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/rounds/{roundId}/bids": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "placeBid",
+        "summary": "Registra una puja manual",
+        "description": "Requiere STUDENT admitido en la sala.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BidAmount"
+              },
+              "example": {
+                "amount": 200
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Puja aceptada. La secuencia se serializa como texto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedBid"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/rounds/{roundId}/buy-now": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "buyNow",
+        "summary": "Compra al precio fijo de la ronda",
+        "description": "Requiere STUDENT admitido. Una repetición de la compra propia usa replayed=true.",
+        "responses": {
+          "201": {
+            "description": "Compra confirmada o repetición de la propia compra.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/rounds/{roundId}/auto-bid": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "getAutoBid",
+        "summary": "Consulta la puja automática propia",
+        "description": "Requiere STUDENT.",
+        "responses": {
+          "200": {
+            "description": "Configuración del estudiante.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoBid"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "configureAutoBid",
+        "summary": "Configura o desactiva la puja automática",
+        "description": "Requiere STUDENT admitido.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoBidInput"
+              },
+              "example": {
+                "enabled": true,
+                "maximumAmount": 1000
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuración resultante.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoBid"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/rounds/{roundId}/dutch-claim": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "claimDutchRound",
+        "summary": "Compra en una ronda holandesa",
+        "description": "Requiere STUDENT admitido. El reloj del servidor determina el precio.",
+        "responses": {
+          "201": {
+            "description": "Compra al precio que calculó el servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/rounds/{roundId}/sealed-bid": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "placeSealedBid",
+        "summary": "Registra una oferta de sobre cerrado",
+        "description": "Requiere STUDENT admitido. Admite un sobre por participante.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BidAmount"
+              },
+              "example": {
+                "amount": 500
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Monto y hora del sobre propio y número de sobres.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SealedBid"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/rounds/{roundId}/sealed-results": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RoundId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Pujas"
+        ],
+        "operationId": "getSealedResults",
+        "summary": "Consulta los resultados del sobre cerrado",
+        "description": "Disponible para participantes admitidos y para el funcionario dueño de la sala.",
+        "responses": {
+          "200": {
+            "description": "Ranking de sobres de la ronda cerrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SealedResults"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT de acceso vigente emitido por ECILOST Auth. Requiere el claim exp."
+      }
+    },
+    "parameters": {
+      "RoomId": {
+        "name": "roomId",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la sala.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RoundId": {
+        "name": "roundId",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la ronda.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Parámetros o cuerpo inválidos.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpError"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "JWT ausente o inválido.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpError"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Permiso insuficiente para la operación.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpError"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "El recurso no existe.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpError"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "El estado del recurso impide completar la operación.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpError"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Una dependencia del servicio no respondió.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpError"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "HttpError": {
+        "type": "object",
+        "required": [
+          "statusCode",
+          "message"
+        ],
+        "properties": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Entry": {
+        "type": "object",
+        "required": [
+          "kind",
+          "catalogId"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ITEM",
+              "LOT"
+            ]
+          },
+          "catalogId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "RoundInput": {
+        "type": "object",
+        "required": [
+          "entries",
+          "startingPrice"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            },
+            "minItems": 1
+          },
+          "startingPrice": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "buyNowPrice": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Precio opcional de compra inmediata. Debe superar el precio inicial."
+          }
+        }
+      },
+      "ScheduleRoom": {
+        "type": "object",
+        "required": [
+          "name",
+          "maximumCapacity",
+          "startsAt",
+          "rounds"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "maximumCapacity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dynamicModes": {
+            "type": "boolean",
+            "default": false
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoundInput"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "Room": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "startsAt",
+          "maximumCapacity",
+          "admittedCount",
+          "createdAt",
+          "dynamicModesEnabled",
+          "isOwner",
+          "isParticipant"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "ACTIVE",
+              "CLOSED",
+              "CANCELLED"
+            ]
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maximumCapacity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "admittedCount": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dynamicModesEnabled": {
+            "type": "boolean"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "isParticipant": {
+            "type": "boolean"
+          },
+          "roundCount": {
+            "type": "integer"
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Round"
+            }
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Round": {
+        "type": "object",
+        "required": [
+          "id",
+          "position",
+          "status",
+          "currentPrice",
+          "entries",
+          "mode",
+          "modeLocked"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "ACTIVE",
+              "CLOSED"
+            ]
+          },
+          "startingPrice": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200"
+          },
+          "currentPrice": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200"
+          },
+          "buyNowPrice": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200",
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "maximumEndsAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "AWARDED",
+              "DESERTED",
+              null
+            ],
+            "nullable": true
+          },
+          "closeReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "EXPIRED",
+              "BUY_NOW",
+              "DUTCH_CLAIM",
+              null
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "CLASSIC",
+              "DUTCH",
+              "SEALED",
+              "MYSTERY"
+            ]
+          },
+          "modeLocked": {
+            "type": "boolean"
+          },
+          "hasBids": {
+            "type": "boolean"
+          },
+          "isLeading": {
+            "type": "boolean"
+          },
+          "myHighestBid": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200",
+            "nullable": true
+          },
+          "wildcardSpins": {
+            "type": "integer"
+          }
+        }
+      },
+      "RoomState": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "currentRound",
+          "autoBid",
+          "serverTime"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "ACTIVE",
+              "CLOSED",
+              "CANCELLED"
+            ]
+          },
+          "currentRound": {
+            "type": "object",
+            "nullable": true,
+            "description": "Ronda activa con precio, entradas, modalidad y fecha de cierre.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "position": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "currentPrice": {
+                "type": "string",
+                "description": "Importe decimal en Ecicoin.",
+                "example": "200"
+              },
+              "endsAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "CLASSIC",
+                  "DUTCH",
+                  "SEALED",
+                  "MYSTERY"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "SCHEDULED",
+                  "ACTIVE",
+                  "CLOSED"
+                ]
+              },
+              "buyNowPrice": {
+                "type": "string",
+                "description": "Importe decimal en Ecicoin.",
+                "example": "200",
+                "nullable": true
+              },
+              "startedAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "maximumEndsAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "entries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Entry"
+                }
+              },
+              "modeLocked": {
+                "type": "boolean"
+              }
+            }
+          },
+          "autoBid": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "maximumAmount": {
+                "type": "string",
+                "description": "Importe decimal en Ecicoin.",
+                "example": "200",
+                "nullable": true
+              },
+              "stopped": {
+                "type": "boolean"
+              },
+              "stoppedReason": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Admission": {
+        "type": "object",
+        "required": [
+          "participant",
+          "alreadyAdmitted"
+        ],
+        "properties": {
+          "participant": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "roomId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string"
+              }
+            }
+          },
+          "alreadyAdmitted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Toggle": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Spin": {
+        "type": "object",
+        "required": [
+          "roomId",
+          "roundId",
+          "position",
+          "segment",
+          "mode",
+          "wildcardSpins",
+          "canSpinAgain"
+        ],
+        "properties": {
+          "roomId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roundId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "segment": {
+            "type": "string",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "CLASSIC",
+              "DUTCH",
+              "SEALED",
+              "MYSTERY",
+              null
+            ],
+            "nullable": true
+          },
+          "wildcardSpins": {
+            "type": "integer"
+          },
+          "canSpinAgain": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BidAmount": {
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "AcceptedBid": {
+        "type": "object",
+        "required": [
+          "id",
+          "roundId",
+          "bidderId",
+          "amount",
+          "sequence",
+          "endsAt",
+          "extended"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roundId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bidderId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200"
+          },
+          "sequence": {
+            "type": "string",
+            "example": "2"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "extended": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Purchase": {
+        "type": "object",
+        "required": [
+          "roundId",
+          "roomId",
+          "buyerId",
+          "price",
+          "closedAt",
+          "replayed"
+        ],
+        "properties": {
+          "roundId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roomId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "buyerId": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200"
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AutoBidInput": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "maximumAmount": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "AutoBid": {
+        "type": "object",
+        "required": [
+          "roundId",
+          "enabled",
+          "maximumAmount",
+          "stopped",
+          "stoppedReason"
+        ],
+        "properties": {
+          "roundId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "maximumAmount": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200",
+            "nullable": true
+          },
+          "stopped": {
+            "type": "boolean"
+          },
+          "stoppedReason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SealedBid": {
+        "type": "object",
+        "required": [
+          "roundId",
+          "amount",
+          "sealedAt",
+          "sealedCount"
+        ],
+        "properties": {
+          "roundId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Importe decimal en Ecicoin.",
+            "example": "200"
+          },
+          "sealedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sealedCount": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "SealedResults": {
+        "type": "object",
+        "required": [
+          "roundId",
+          "sealedCount",
+          "ranking",
+          "myRank"
+        ],
+        "properties": {
+          "roundId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sealedCount": {
+            "type": "integer"
+          },
+          "ranking": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rank": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "amount": {
+                  "type": "string",
+                  "description": "Importe decimal en Ecicoin.",
+                  "example": "200"
+                },
+                "mine": {
+                  "type": "boolean"
+                },
+                "winner": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "rank",
+                "amount",
+                "mine",
+                "winner"
+              ]
+            }
+          },
+          "myRank": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          }
+        }
+      }
+    }
+  }
+}
