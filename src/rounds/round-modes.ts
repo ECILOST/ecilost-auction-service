@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { Prisma, RoundMode } from '../generated/prisma/client.js';
 
 /**
@@ -39,6 +39,29 @@ export function availableSegments(wildcardSpins: number): SpinSegment[] {
 export function spinRoulette(wildcardSpins: number, pick: (max: number) => number = randomInt): SpinSegment {
   const segments = availableSegments(wildcardSpins);
   return segments[pick(segments.length)];
+}
+
+/** La ruleta automática elige directamente entre las tres modalidades dinámicas. */
+export function randomDynamicMode(): Exclude<RoundMode, 'CLASSIC'> {
+  const modes = [RoundMode.DUTCH, RoundMode.SEALED, RoundMode.MYSTERY] as const;
+  return modes[randomInt(modes.length)];
+}
+
+export async function enqueueModeSelected(
+  tx: Prisma.TransactionClient,
+  event: {
+    roomId: string; roundId: string; position: number; segment: SpinSegment | null; mode: RoundMode | null;
+    wildcardSpins: number; entries: Array<{ kind: string; catalogId: string }>;
+  },
+) {
+  const eventId = randomUUID();
+  const eventType = 'auction.round.mode-selected.v1';
+  await tx.outboxEvent.create({
+    data: {
+      id: eventId, eventType, routingKey: eventType, aggregateId: event.roundId,
+      payload: { eventId, eventType, occurredAt: new Date().toISOString(), ...event, maxWildcardSpins: MAX_WILDCARD_SPINS },
+    },
+  });
 }
 
 export const modeOfSegment = (segment: SpinSegment): RoundMode | null =>

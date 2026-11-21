@@ -1,0 +1,1 @@
+ALTER TYPE "RoundCloseReason" ADD VALUE 'ALL_SEALED';

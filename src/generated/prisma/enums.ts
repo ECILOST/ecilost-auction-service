@@ -47,7 +47,8 @@ export type RoundResult = (typeof RoundResult)[keyof typeof RoundResult]
 export const RoundCloseReason = {
   EXPIRED: 'EXPIRED',
   BUY_NOW: 'BUY_NOW',
-  DUTCH_CLAIM: 'DUTCH_CLAIM'
+  DUTCH_CLAIM: 'DUTCH_CLAIM',
+  ALL_SEALED: 'ALL_SEALED'
 } as const
 
 export type RoundCloseReason = (typeof RoundCloseReason)[keyof typeof RoundCloseReason]
