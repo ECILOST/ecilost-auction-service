@@ -27,7 +27,7 @@ jobs:
         image: postgres:17-alpine
         env:
           POSTGRES_USER: auction
-          POSTGRES_PASSWORD: auction
+          POSTGRES_PASSWORD: ${{ secrets.AUCTION_TEST_DB_PASSWORD }}
           POSTGRES_DB: ecilost_auction
         ports:
           - 5436:5432
@@ -58,7 +58,7 @@ jobs:
       - name: Integration tests (PostgreSQL)
         run: npm run test:integration
         env:
-          TEST_DATABASE_URL: postgresql://auction:auction@localhost:5436/ecilost_auction?schema=auction_it
+          TEST_DATABASE_URL: postgresql://auction:${{ secrets.AUCTION_TEST_DB_PASSWORD }}@localhost:5436/ecilost_auction?schema=auction_it
       - name: Build
         run: npm run build
 
