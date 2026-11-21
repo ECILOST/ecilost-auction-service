@@ -90,28 +90,31 @@ describe('Subastas dinamicas (PostgreSQL)', () => {
     const { sealed, bids } = services(wallet);
 
     await sealed.seal(roundId, 'bob', 5200);
-    await Promise.all([sealed.seal(roundId, 'ana', 4750), sealed.seal(roundId, 'carl', 5200)]);
-    await expect(sealed.seal(roundId, 'ana', 9000)).rejects.toThrow('Ya sellaste');
+    await expect(sealed.seal(roundId, 'bob', 9000)).rejects.toThrow('Ya sellaste');
     await expect(bids.place(roundId, 'ana', 9000)).rejects.toThrow('pujas ascendentes');
 
-    // Mientras esta abierta: el precio y el lider no se mueven, y cada uno solo ve su sobre.
-    const open = await rooms.getRoom(roomId, 'ana');
-    expect(open.rounds[0]).toMatchObject({ hasBids: false, isLeading: false, sealed: { count: 3 } });
-    expect(open.rounds[0].sealed?.mine?.amount.toString()).toBe('4750');
+    // Sin todos los sobres, la ronda sigue abierta y solo el autor ve su monto.
+    const open = await rooms.getRoom(roomId, 'bob');
+    expect(open.rounds[0]).toMatchObject({ status: 'ACTIVE', hasBids: false, isLeading: false, sealed: { count: 1 } });
+    expect(open.rounds[0].sealed?.mine?.amount.toString()).toBe('5200');
     expect(open.rounds[0].currentPrice.toString()).toBe('3000');
-    expect((await events('auction.round.sealed-bid.placed.v1')).map((event) => event.sealedCount)).toEqual([1, 2, 3]);
+    const other = await rooms.getRoom(roomId, 'ana');
+    expect(other.rounds[0].sealed).toMatchObject({ count: 1, mine: null });
 
-    await prisma.round.update({ where: { id: roundId }, data: { endsAt: new Date(Date.now() - 1_000) } });
-    await rooms.activateDueRooms();
-    await expect(sealed.seal(roundId, 'ana', 9000)).rejects.toThrow();
+    await Promise.all([sealed.seal(roundId, 'ana', 4750), sealed.seal(roundId, 'carl', 5200)]);
+    expect((await events('auction.round.sealed-bid.placed.v1')).map((event) => event.sealedCount)).toEqual([1, 2, 3]);
+    await expect(sealed.seal(roundId, 'ana', 9000)).rejects.toThrow('La ronda no esta activa.');
 
     const closed = await prisma.round.findUniqueOrThrow({ where: { id: roundId } });
     // bob y carl empatan en 5.200: gana bob, que sello primero.
-    expect(closed).toMatchObject({ status: RoundStatus.CLOSED, result: 'AWARDED', winnerId: 'bob', currentBidderId: 'bob' });
+    expect(closed).toMatchObject({ status: RoundStatus.CLOSED, result: 'AWARDED', winnerId: 'bob', currentBidderId: 'bob', closeReason: 'ALL_SEALED' });
+    expect(closed.closedAt!.getTime()).toBeLessThan(closed.endsAt!.getTime());
     expect(closed.currentPrice.toString()).toBe('5200');
 
-    const [event] = await events('auction.round.closed.v1');
-    expect(event).toMatchObject({ winnerId: 'bob', winningAmount: '5200', mode: 'SEALED' });
+    const closedEvents = await events('auction.round.closed.v1');
+    expect(closedEvents).toHaveLength(1);
+    const [event] = closedEvents;
+    expect(event).toMatchObject({ winnerId: 'bob', winningAmount: '5200', mode: 'SEALED', closeReason: 'ALL_SEALED' });
     wallet.settle(event as never);
     expect(wallet.debited.get('bob')).toBe(5200);
     expect(wallet.available.get('ana')).toBe(10_000);

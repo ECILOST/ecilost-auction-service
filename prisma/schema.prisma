@@ -39,6 +39,7 @@ enum RoundCloseReason {
   EXPIRED
   BUY_NOW
   DUTCH_CLAIM
+  ALL_SEALED
 }
 
 // Como se juega una ronda (subastas dinamicas, ADR-0003). CLASSIC es la subasta ascendente

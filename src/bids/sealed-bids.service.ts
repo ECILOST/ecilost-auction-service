@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Prisma, RoundMode, RoundStatus } from '../generated/prisma/client.js';
+import { Prisma, RoundCloseReason, RoundMode, RoundResult, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { WalletHoldClient } from '../events/wallet-hold.client.js';
+import { closeRoundAndAdvance, resolveSealedRound, ROUND_EVENT_SELECT } from '../rounds/round-lifecycle.js';
 import { BidsService, holdReference } from './bids.service.js';
 
 const SEALED_PLACED = 'auction.round.sealed-bid.placed.v1';
@@ -18,7 +19,7 @@ export type SealedResults = {
 };
 
 /**
- * Sobre cerrado (ADR-0003): cada estudiante puja una sola vez y a ciegas; al vencer la ronda
+ * Sobre cerrado (ADR-0003): cada estudiante puja una sola vez y a ciegas; cuando todos sellan o vence la ronda
  * gana la puja mas alta (`resolveSealedRound`).
  *
  * El monto se reserva en wallet al sellar, con la misma referencia que una puja normal: al
@@ -72,7 +73,7 @@ export class SealedBidsService {
       await this.wallet.release(bidderId, reference, amount);
       throw new ConflictException('La ronda ya cerro.');
     });
-    this.logger.log(`round=${roundId} bidder=${bidderId} sealed amount=${amount} count=${receipt.sealedCount}`);
+    this.logger.log(`round=${roundId} bidder=${bidderId} sealed count=${receipt.sealedCount}`);
     return receipt;
   }
 
@@ -84,8 +85,10 @@ export class SealedBidsService {
    */
   private store(roundId: string, bidderId: string, amount: number) {
     return this.prisma.$transaction(async (tx) => {
-      const [open] = await tx.$queryRaw<Array<{ roomId: string; position: number }>>`
-        SELECT "roomId", position FROM "rounds"
+      const [open] = await tx.$queryRaw<Array<{ roomId: string; position: number; admittedCount: number }>>`
+        SELECT "roomId", position,
+          (SELECT "admittedCount" FROM "rooms" WHERE "rooms".id = "rounds"."roomId") AS "admittedCount"
+        FROM "rounds"
         WHERE id = ${roundId}
           AND status = CAST(${RoundStatus.ACTIVE} AS "RoundStatus")
           AND mode = CAST(${RoundMode.SEALED} AS "RoundMode")
@@ -109,6 +112,17 @@ export class SealedBidsService {
           },
         },
       });
+      // El acceso se cierra al iniciar la sala. El aforo válido es el número
+      // de admitidos y el bloqueo de la ronda serializa el último sobre y el reloj.
+      if (open.admittedCount > 0 && sealedCount === open.admittedCount) {
+        const snapshot = await tx.round.findUniqueOrThrow({ where: { id: roundId }, select: ROUND_EVENT_SELECT });
+        const winner = await resolveSealedRound(tx, snapshot);
+        await closeRoundAndAdvance(tx, winner, sealed.createdAt, {
+          result: RoundResult.AWARDED,
+          winnerId: winner.currentBidderId,
+          closeReason: RoundCloseReason.ALL_SEALED,
+        }, this.logger);
+      }
       return { roundId, amount: sealed.amount, sealedAt: sealed.createdAt, sealedCount };
     });
   }

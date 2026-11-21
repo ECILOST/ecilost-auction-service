@@ -2,6 +2,7 @@ import { Transform, Type } from 'class-transformer';
 import { ArrayMinSize, IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
 
 export enum AuctionableKindDto { ITEM = 'ITEM', LOT = 'LOT' }
+export enum ScheduledRoundMode { CLASSIC = 'CLASSIC', SEALED = 'SEALED', DUTCH = 'DUTCH', MYSTERY = 'MYSTERY', ROULETTE = 'ROULETTE' }
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
@@ -11,6 +12,8 @@ export class RoundEntryDto {
 }
 
 export class RoundDto {
+  @IsOptional() @IsEnum(ScheduledRoundMode) mode?: ScheduledRoundMode;
+
   @ArrayMinSize(1, { message: 'Cada ronda debe contener al menos un objeto o lote.' })
   @ValidateNested({ each: true }) @Type(() => RoundEntryDto) entries: RoundEntryDto[];
 

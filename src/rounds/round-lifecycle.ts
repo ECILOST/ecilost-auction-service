@@ -89,7 +89,7 @@ export async function enqueueRoundEvent(
               result: closing.result,
               winnerId: closing.winnerId,
               winningAmount: closing.winnerId ? round.currentPrice.toString() : null,
-              // Campo agregado (HU-24): EXPIRED, BUY_NOW o DUTCH_CLAIM. Los consumidores anteriores lo ignoran.
+              // Campo agregado (HU-24): EXPIRED, BUY_NOW, DUTCH_CLAIM o ALL_SEALED. Los consumidores anteriores lo ignoran.
               closeReason: closing.closeReason,
               // Campos agregados (gamificacion): quien participo y, en sobre cerrado, la segunda
               // oferta. Viajan solo por el bus interno; los consumidores anteriores los ignoran.
@@ -163,7 +163,7 @@ export async function closeRoundAndAdvance(
 }
 
 /**
- * Sobre cerrado (ADR-0003): al vencer la ronda, la puja sellada mas alta pasa a ser el precio
+ * Sobre cerrado (ADR-0003): al sellar todos o vencer la ronda, la puja sellada mas alta pasa a ser el precio
  * y el lider, y en empate gana la que se sello primero. Asi el cierre comun
  * (`closeRoundAndAdvance`) adjudica, publica `winningAmount` y wallet cobra al ganador y
  * libera a los demas exactamente como en cualquier ronda.

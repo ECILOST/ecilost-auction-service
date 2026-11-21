@@ -9,10 +9,12 @@ const sealedRound = (overrides: Record<string, unknown> = {}) => ({
   room: { participants: [{ id: 'p' }] }, ...overrides,
 });
 
-function setup({ round = sealedRound() as Record<string, unknown>, existing = null as unknown, open = [{ roomId: 'room', position: 1 }] as unknown[], holds = true } = {}) {
+function setup({ round = sealedRound() as Record<string, unknown>, existing = null as unknown, open = [{ roomId: 'room', position: 1, admittedCount: 8 }] as unknown[], holds = true } = {}) {
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue(open),
-    sealedBid: { create: vi.fn().mockResolvedValue({ amount: decimal(4750), createdAt: new Date('2030-01-01T10:00:00Z') }), count: vi.fn().mockResolvedValue(7) },
+    sealedBid: { create: vi.fn().mockResolvedValue({ amount: decimal(4750), createdAt: new Date('2030-01-01T10:00:00Z') }), count: vi.fn().mockResolvedValue(7), findFirst: vi.fn(), groupBy: vi.fn().mockResolvedValue([]), findMany: vi.fn().mockResolvedValue([]) },
+    round: { findUniqueOrThrow: vi.fn(), update: vi.fn(), findFirst: vi.fn().mockResolvedValue(null) },
+    room: { updateMany: vi.fn() },
     outboxEvent: { create: vi.fn() },
   };
   const prisma = {
@@ -30,11 +32,34 @@ describe('SealedBidsService (ADR-0003)', () => {
     const { service, wallet, tx } = setup();
     await expect(service.seal('round', 'ana', 4750)).resolves.toMatchObject({ roundId: 'round', sealedCount: 7 });
     expect(wallet.hold).toHaveBeenCalledWith('ana', 'bid:round:ana', 4750);
+    expect(tx.round.update).not.toHaveBeenCalled();
     const payload = tx.outboxEvent.create.mock.calls[0][0].data.payload;
     expect(payload).toMatchObject({ eventType: 'auction.round.sealed-bid.placed.v1', roundId: 'round', sealedCount: 7 });
     // Ni el monto ni quien sello salen mientras la ronda esta abierta.
     expect(JSON.stringify(payload)).not.toContain('ana');
     expect(JSON.stringify(payload)).not.toContain('4750');
+  });
+
+  it('adjudica al recibir el último sobre de los admitidos y publica la liquidación', async () => {
+    const { service, tx, wallet } = setup({ open: [{ roomId: 'room', position: 1, admittedCount: 7 }] });
+    const snapshot = {
+      id: 'round', roomId: 'room', position: 1, mode: RoundMode.SEALED,
+      currentPrice: decimal(3000), currentBidderId: null, entries: [],
+    };
+    tx.round.findUniqueOrThrow.mockResolvedValue(snapshot);
+    tx.sealedBid.findFirst.mockResolvedValue({ bidderId: 'bob', amount: decimal(5200) });
+    tx.round.update.mockResolvedValueOnce({ ...snapshot, currentPrice: decimal(5200), currentBidderId: 'bob' });
+
+    await expect(service.seal('round', 'ana', 4750)).resolves.toMatchObject({ sealedCount: 7 });
+    expect(tx.round.update).toHaveBeenLastCalledWith({
+      where: { id: 'round' },
+      data: { status: 'CLOSED', result: 'AWARDED', winnerId: 'bob', closeReason: 'ALL_SEALED', closedAt: expect.any(Date) },
+    });
+    expect(tx.outboxEvent.create).toHaveBeenLastCalledWith({ data: expect.objectContaining({
+      eventType: 'auction.round.closed.v1',
+      payload: expect.objectContaining({ winnerId: 'bob', winningAmount: '5200', closeReason: 'ALL_SEALED', roomStatus: 'CLOSED' }),
+    }) });
+    expect(wallet.release).not.toHaveBeenCalled();
   });
 
   it('una sola puja por estudiante: la segunda se rechaza sin tocar wallet', async () => {

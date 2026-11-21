@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, NotFoundExc
 import { describe, expect, it, vi } from 'vitest';
 import { Prisma, RoomStatus } from '../generated/prisma/client.js';
 import { RoomsService } from './rooms.service.js';
-import { AuctionableKindDto } from './dto/schedule-room.dto.js';
+import { AuctionableKindDto, ScheduledRoundMode } from './dto/schedule-room.dto.js';
 
 const item = '11111111-1111-4111-8111-111111111111';
 const valid = { name: 'Sala de prueba', maximumCapacity: 30, startsAt: '2030-01-01T10:00:00.000Z', rounds: [{ entries: [{ kind: AuctionableKindDto.ITEM, catalogId: item }], startingPrice: 50000 }] };
@@ -36,6 +36,58 @@ describe('RoomsService', () => {
     expect(data.rounds.create[0].startingPrice.toString()).toBe('50000');
     expect(data.rounds.create[0].currentPrice.toString()).toBe('50000');
   });
+  it('configura la modalidad de cada ronda y los precios de la holandesa', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
+    const service = new RoomsService({ room: { create } } as never, catalog as never);
+    await service.schedule({ ...valid, rounds: [
+      { ...valid.rounds[0], mode: ScheduledRoundMode.SEALED },
+      { ...valid.rounds[0], mode: ScheduledRoundMode.DUTCH, buyNowPrice: 80000 },
+    ] }, 'staff');
+    const rounds = create.mock.calls[0][0].data.rounds.create;
+    expect(rounds[0]).toMatchObject({ mode: 'SEALED', modeLockedAt: expect.any(Date) });
+    expect(rounds[1]).toMatchObject({ mode: 'DUTCH', dutchIntervalSeconds: 5 });
+    expect(rounds[1].currentPrice.toString()).toBe('80000');
+  });
+
+  it('publica el ocultamiento de un modo misterioso dentro de la transacción de programación', async () => {
+    const tx = {
+      room: { create: vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] }) },
+      outboxEvent: { create: vi.fn() },
+    };
+    const service = new RoomsService({ $transaction: (run: (client: typeof tx) => unknown) => run(tx) } as never, catalog as never);
+    await service.schedule({ ...valid, rounds: [{ ...valid.rounds[0], mode: ScheduledRoundMode.MYSTERY }] }, 'staff');
+    expect(tx.outboxEvent.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      eventType: 'auction.round.mode-selected.v1',
+      payload: expect.objectContaining({ mode: 'MYSTERY', entries: valid.rounds[0].entries }),
+    }) });
+  });
+
+  it('el dueño puede adelantar el inicio y otro funcionario recibe 403', async () => {
+    const activated = { id: 'round', roomId: 'room', position: 1, entries: [], currentPrice: new Prisma.Decimal(100) };
+    const tx = {
+      room: {
+        findUnique: vi.fn().mockResolvedValue({ scheduledBy: 'staff', status: 'SCHEDULED' }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      round: { updateMany: vi.fn().mockResolvedValue({ count: 1 }), findFirst: vi.fn().mockResolvedValue(activated) },
+      outboxEvent: { create: vi.fn() },
+      $queryRaw: dbClock(),
+    };
+    const service = new RoomsService({
+      $transaction: (run: (client: typeof tx) => unknown) => run(tx),
+      $queryRaw: dbClock(),
+      room: { findUnique: vi.fn().mockResolvedValue({ id: 'room', status: 'ACTIVE', scheduledBy: 'staff', participants: [], rounds: [] }) },
+    } as never, catalog as never);
+    await expect(service.startNow('room', 'other')).rejects.toBeInstanceOf(ForbiddenException);
+    expect(tx.room.updateMany).not.toHaveBeenCalled();
+    await expect(service.startNow('room', 'staff')).resolves.toMatchObject({ status: 'ACTIVE' });
+    expect(tx.room.updateMany).toHaveBeenCalledWith({
+      where: { id: 'room', status: 'SCHEDULED' },
+      data: { status: 'ACTIVE', startsAt: new Date(DB_NOW) },
+    });
+    expect(tx.outboxEvent.create).toHaveBeenCalledWith({ data: expect.objectContaining({ eventType: 'auction.round.activated.v1' }) });
+  });
+
   it('responde la sala sin columnas BigInt, que JSON no sabe serializar', async () => {
     const create = vi.fn().mockResolvedValue({ id: 'room', participants: [], rounds: [] });
     const service = new RoomsService({ room: { create } } as never, catalog as never);

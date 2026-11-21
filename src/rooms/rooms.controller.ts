@@ -43,6 +43,12 @@ export class RoomsController {
     return this.rooms.admitParticipant(roomId, principal.userId);
   }
 
+  @Post(':roomId/start')
+  @Roles(Role.STAFF)
+  start(@CurrentUser() principal: Principal, @Param('roomId', new ParseUUIDPipe({ version: '4' })) roomId: string) {
+    return this.rooms.startNow(roomId, principal.userId);
+  }
+
   /** ADR-0003: el dueño de la sala activa o desactiva las subastas dinamicas. */
   @Patch(':roomId/dynamic-modes')
   @Roles(Role.STAFF)

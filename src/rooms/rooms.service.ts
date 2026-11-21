@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CatalogReservationClient } from '../events/catalog-reservation.client.js';
 import { closeRoundAndAdvance, enqueueRoundEvent, resolveSealedRound, ROUND_EVENT_SELECT, roundTiming } from '../rounds/round-lifecycle.js';
 import type { ListRoomsQueryDto } from './dto/list-rooms-query.dto.js';
+import { dutchSchedule, enqueueModeSelected, randomDynamicMode } from '../rounds/round-modes.js';
 import type { ScheduleRoomDto } from './dto/schedule-room.dto.js';
 
 const ROOM_SUMMARY = {
@@ -130,10 +131,15 @@ export class RoomsService {
       throw new BadRequestException('El precio de compra inmediata debe ser un entero mayor que el precio minimo de la ronda.');
     }
     const roomId = randomUUID();
-    const rounds = input.rounds.map((round, index) => ({
-      id: randomUUID(), position: index + 1, entries: round.entries, startingPrice: new Prisma.Decimal(round.startingPrice),
-      buyNowPrice: round.buyNowPrice != null ? new Prisma.Decimal(round.buyNowPrice) : null,
-    }));
+    const rounds = input.rounds.map((round, index) => {
+      const mode = round.mode === 'ROULETTE' ? randomDynamicMode() : round.mode ?? RoundMode.CLASSIC;
+      const startingPrice = new Prisma.Decimal(round.startingPrice);
+      const buyNowPrice = mode !== RoundMode.SEALED && round.buyNowPrice != null ? new Prisma.Decimal(round.buyNowPrice) : null;
+      return {
+        id: randomUUID(), position: index + 1, entries: round.entries, mode, startingPrice, buyNowPrice,
+        dutch: mode === RoundMode.DUTCH ? dutchSchedule({ startingPrice, buyNowPrice }) : null,
+      };
+    });
     // Si catalog no contesta a tiempo no se sabe si reservo: se compensa por si acaso. Si
     // contesto que no, ya deshizo lo suyo en su propia transaccion y no hay nada que liberar.
     let reserved: boolean;
@@ -145,26 +151,46 @@ export class RoomsService {
     }
     if (!reserved) throw new ConflictException('Uno o mas objetos o lotes ya no estan disponibles.');
     try {
-      const room = await this.prisma.room.create({
-        data: {
-          id: roomId,
-          name: input.name,
-          maximumCapacity: input.maximumCapacity,
-          startsAt: new Date(input.startsAt),
-          scheduledBy,
-          dynamicModesEnabled: input.dynamicModes ?? false,
-          rounds: {
-            create: rounds.map((round) => ({
-              // El precio vigente arranca en el minimo: es lo que ve la sala antes de la primera puja.
-              id: round.id, position: round.position, startingPrice: round.startingPrice, currentPrice: round.startingPrice,
-              buyNowPrice: round.buyNowPrice,
-              entries: { create: round.entries.map((entry) => ({ id: randomUUID(), kind: entry.kind, catalogId: entry.catalogId })) },
-            })),
+      const persist = async (tx: Prisma.TransactionClient) => {
+        const room = await tx.room.create({
+          data: {
+            id: roomId,
+            name: input.name,
+            maximumCapacity: input.maximumCapacity,
+            startsAt: new Date(input.startsAt),
+            scheduledBy,
+            dynamicModesEnabled: input.dynamicModes ?? false,
+            rounds: {
+              create: rounds.map((round) => ({
+                // El precio vigente arranca en el minimo: es lo que ve la sala antes de la primera puja.
+                id: round.id, position: round.position, startingPrice: round.startingPrice, currentPrice: round.startingPrice,
+                buyNowPrice: round.buyNowPrice,
+                ...(round.mode !== RoundMode.CLASSIC ? { mode: round.mode, modeLockedAt: new Date() } : {}),
+                ...(round.dutch ? {
+                  currentPrice: round.dutch.startPrice,
+                  dutchStartPrice: round.dutch.startPrice,
+                  dutchFloorPrice: round.dutch.floorPrice,
+                  dutchStep: round.dutch.step,
+                  dutchIntervalSeconds: round.dutch.intervalSeconds,
+                } : {}),
+                entries: { create: round.entries.map((entry) => ({ id: randomUUID(), kind: entry.kind, catalogId: entry.catalogId })) },
+              })),
+            },
           },
-        },
-        select: roomDetailSelect(scheduledBy),
-      });
-      return toRoomDetail(room, scheduledBy);
+          select: roomDetailSelect(scheduledBy),
+        });
+        for (const round of rounds) {
+          if (round.mode !== RoundMode.MYSTERY) continue;
+          await enqueueModeSelected(tx, {
+            roomId, roundId: round.id, position: round.position, mode: round.mode,
+            segment: null, wildcardSpins: 0, entries: round.entries,
+          });
+        }
+        return toRoomDetail(room, scheduledBy);
+      };
+      // La marca en Catalog se publica solo si la sala y sus rondas se guardaron.
+      return await (rounds.some((round) => round.mode === RoundMode.MYSTERY)
+        ? this.prisma.$transaction(persist) : persist(this.prisma));
     } catch (error) {
       // Catalog ya reservo y la sala no existira: sin compensar, esos objetos quedarian
       // "En subasta" para siempre, reservados por rondas que nadie va a cerrar.
@@ -387,16 +413,51 @@ export class RoomsService {
    * maquina del servicio y la base no puede cerrar una ronda que la base aun considera
    * abierta, ni al reves. Se pide como texto UTC para no depender de la zona de la sesion.
    */
-  private async databaseNow(): Promise<Date> {
-    const [{ now }] = await this.prisma.$queryRaw<Array<{ now: string }>>`
+  private async databaseNow(client: Prisma.TransactionClient = this.prisma): Promise<Date> {
+    const [{ now }] = await client.$queryRaw<Array<{ now: string }>>`
       SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS now
     `;
     return new Date(now);
   }
 
+  /** Abre una sala antes de la hora programada. Solo puede hacerlo su dueño. */
+  async startNow(roomId: string, ownerId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      const room = await tx.room.findUnique({ where: { id: roomId }, select: { scheduledBy: true, status: true } });
+      if (!room) throw new NotFoundException('La sala no existe.');
+      if (room.scheduledBy !== ownerId) throw new ForbiddenException('Solo quien programó la sala puede iniciarla.');
+      if (room.status === RoomStatus.CLOSED) throw new ConflictException('La sala ya terminó.');
+      if (room.status === RoomStatus.ACTIVE) return;
+      await this.activateRoom(tx, roomId, await this.databaseNow(tx), true);
+    });
+    return this.getRoom(roomId, ownerId);
+  }
+
+  private async activateRoom(tx: Prisma.TransactionClient, roomId: string, now: Date, manual = false) {
+    const activated = await tx.room.updateMany({
+      where: { id: roomId, status: RoomStatus.SCHEDULED, ...(manual ? {} : { startsAt: { lte: now } }) },
+      data: { status: RoomStatus.ACTIVE, ...(manual ? { startsAt: now } : {}) },
+    });
+    if (activated.count !== 1) return false;
+    this.logger.log(`room=${roomId} SCHEDULED -> ACTIVE at=${now.toISOString()}`);
+    const firstRound = await tx.round.updateMany({
+      where: { roomId, position: 1, status: RoundStatus.SCHEDULED },
+      data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
+    });
+    if (firstRound.count === 1) {
+      const round = await tx.round.findFirst({
+        where: { roomId, position: 1, status: RoundStatus.ACTIVE }, select: ROUND_EVENT_SELECT,
+      });
+      if (round) {
+        await enqueueRoundEvent(tx, 'auction.round.activated.v1', round, RoomStatus.ACTIVE);
+        this.logger.log(`room=${roomId} round=${round.id} position=1 SCHEDULED -> ACTIVE endsAt=${round.endsAt?.toISOString()}`);
+      }
+    }
+    return true;
+  }
+
   /**
-   * Motor del ciclo de vida (HU-18, HU-19). El reloj del servidor es su unico dueno: el
-   * cliente no puede abrir ni cerrar nada.
+   * Motor del ciclo de vida (HU-18, HU-19), basado en el reloj de PostgreSQL.
    *
    * - Una sala SCHEDULED cuya hora llego pasa a ACTIVE (y con eso cierra el acceso) y abre
    *   su primera ronda.
@@ -415,28 +476,7 @@ export class RoomsService {
       });
       let count = 0;
       for (const room of dueRooms) {
-        // La condición preserva el resultado si dos ciclos del scheduler se cruzan.
-        const activated = await tx.room.updateMany({
-          where: { id: room.id, status: RoomStatus.SCHEDULED, startsAt: { lte: now } },
-          data: { status: RoomStatus.ACTIVE },
-        });
-        if (activated.count !== 1) continue;
-        count += 1;
-        this.logger.log(`room=${room.id} SCHEDULED -> ACTIVE at=${now.toISOString()}`);
-        const firstRound = await tx.round.updateMany({
-          where: { roomId: room.id, position: 1, status: RoundStatus.SCHEDULED },
-          data: { status: RoundStatus.ACTIVE, ...roundTiming(now) },
-        });
-        if (firstRound.count === 1) {
-          const activatedRound = await tx.round.findFirst({
-            where: { roomId: room.id, position: 1, status: RoundStatus.ACTIVE },
-            select: ROUND_EVENT_SELECT,
-          });
-          if (activatedRound) {
-            await enqueueRoundEvent(tx, 'auction.round.activated.v1', activatedRound, RoomStatus.ACTIVE);
-            this.logger.log(`room=${room.id} round=${activatedRound.id} position=1 SCHEDULED -> ACTIVE endsAt=${activatedRound.endsAt?.toISOString()}`);
-          }
-        }
+        if (await this.activateRoom(tx, room.id, now)) count += 1;
       }
 
       const expiredRounds = await tx.round.findMany({

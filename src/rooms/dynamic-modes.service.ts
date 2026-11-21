@@ -1,8 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, RoomStatus, RoundMode, RoundStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { dutchSchedule, MAX_WILDCARD_SPINS, modeOfSegment, SpinSegment, spinRoulette } from '../rounds/round-modes.js';
+import { dutchSchedule, enqueueModeSelected, modeOfSegment, SpinSegment, spinRoulette } from '../rounds/round-modes.js';
 
 export type SpinResult = {
   roomId: string;
@@ -16,8 +15,6 @@ export type SpinResult = {
   /** Si todavia se puede girar: solo tras un comodin. */
   canSpinAgain: boolean;
 };
-
-const MODE_SELECTED = 'auction.round.mode-selected.v1';
 
 /**
  * Subastas dinamicas (ADR-0003): el dueño de la sala las activa y, antes de cada ronda, gira la
@@ -60,7 +57,7 @@ export class DynamicModesService {
           WHERE "roomId" = ${roomId} AND status = CAST(${RoundStatus.SCHEDULED} AS "RoundStatus")
         `;
         for (const round of reverted) {
-          await this.enqueueModeSelected(tx, { roomId, roundId: round.id, position: round.position, segment: null, mode: RoundMode.CLASSIC, wildcardSpins: 0, entries: round.entries });
+          await enqueueModeSelected(tx, { roomId, roundId: round.id, position: round.position, segment: null, mode: RoundMode.CLASSIC, wildcardSpins: 0, entries: round.entries });
         }
       }
       this.logger.log(`room=${roomId} owner=${ownerId} dynamicModes=${enabled}`);
@@ -110,7 +107,7 @@ export class DynamicModesService {
           },
         });
       }
-      await this.enqueueModeSelected(tx, { roomId, roundId, position: round.position, segment, mode, wildcardSpins, entries: details.entries });
+      await enqueueModeSelected(tx, { roomId, roundId, position: round.position, segment, mode, wildcardSpins, entries: details.entries });
       this.logger.log(`room=${roomId} round=${roundId} spin=${segment} mode=${mode ?? 'pending'} wildcards=${wildcardSpins}`);
       return {
         roomId, roundId, position: round.position, segment, mode, wildcardSpins,
@@ -124,40 +121,5 @@ export class DynamicModesService {
     if (!room) throw new NotFoundException('La sala no existe.');
     if (room.scheduledBy !== ownerId) throw new ForbiddenException('Solo quien programo la sala puede usar las subastas dinamicas.');
     return room;
-  }
-
-  /**
-   * Engagement anima la ruleta en la sala con este evento y catalog oculta los objetos de un
-   * lote misterioso (o los vuelve a mostrar si la ronda dejo de serlo).
-   */
-  private async enqueueModeSelected(
-    tx: Prisma.TransactionClient,
-    event: {
-      roomId: string; roundId: string; position: number; segment: SpinSegment | null; mode: RoundMode | null;
-      wildcardSpins: number; entries: Array<{ kind: string; catalogId: string }>;
-    },
-  ) {
-    const eventId = randomUUID();
-    await tx.outboxEvent.create({
-      data: {
-        id: eventId,
-        eventType: MODE_SELECTED,
-        routingKey: MODE_SELECTED,
-        aggregateId: event.roundId,
-        payload: {
-          eventId,
-          eventType: MODE_SELECTED,
-          occurredAt: new Date().toISOString(),
-          roomId: event.roomId,
-          roundId: event.roundId,
-          position: event.position,
-          segment: event.segment,
-          mode: event.mode,
-          wildcardSpins: event.wildcardSpins,
-          maxWildcardSpins: MAX_WILDCARD_SPINS,
-          entries: event.entries.map(({ kind, catalogId }) => ({ kind, catalogId })),
-        },
-      },
-    });
   }
 }
