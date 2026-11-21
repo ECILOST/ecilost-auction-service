@@ -8,7 +8,7 @@ COPY nest-cli.json tsconfig*.json ./
 COPY src ./src
 
 RUN printf 'DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build\n' > .env \
-    && npm ci --no-audit --no-fund \
+    && npm ci --no-audit --no-fund --ignore-scripts \
     && npm run build \
     && rm -f .env
 
