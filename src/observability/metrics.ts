@@ -57,14 +57,15 @@ export function installMetrics(
   });
 
   for (const gauge of gauges) {
-    new Gauge({
+    const metric = new Gauge({
       name: gauge.name,
       help: gauge.help,
-      registers: [registry],
+      registers: [],
       collect() {
         this.set(gauge.read());
       },
     });
+    registry.registerMetric(metric);
   }
 
   app.use((req: HttpRequest, res: HttpResponse, next: () => void) => {
